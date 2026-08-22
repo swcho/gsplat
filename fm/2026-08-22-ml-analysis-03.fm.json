@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "527b9bad-e35f-4e9d-bb23-b752e2db28cd",
+      "question": "`app_opt=True`가 학습 파라미터를 어떻게 바꾸는가?",
+      "answer": "`sh0`/`shN` 대신 `features [N,32]` + `colors [N,3]`을 학습한다. `sh_degree`와 상호 배타적 경로여서 체크포인트 호환성이 깨진다."
+    },
+    {
+      "id": "d92bcb92-f3c5-42af-9451-b01607258cb7",
+      "question": "`AppearanceOptModule`의 마지막 층을 zeros로 초기화하는 이유는?",
+      "answer": "초기 출력이 0이 되어 보정이 없는 상태에서 시작하기 위함이다. 즉 학습 초기에 외관 보정 모듈이 렌더 결과를 교란하지 않는다."
+    },
+    {
+      "id": "5851eb75-be86-4cca-a7e6-7f57499680c6",
+      "question": "`HexPlaneField`는 4D 좌표를 어떻게 처리하는가?",
+      "answer": "(x,y,z,t) 4D 좌표를 xy, xz, xt, yz, yt, zt 6개 2D 평면에서 bilinear `grid_sample`하고, 스케일별로 element-wise 곱한 뒤 multires (1,2) 스케일을 concat해 `[N, 64]` 특징을 만든다."
+    },
+    {
+      "id": "d9671bb9-5346-4307-a0bf-f4aacff8dfc6",
+      "question": "`HexPlaneField`의 grid 해상도와 파라미터 규모는?",
+      "answer": "grid 해상도는 `[64, 64, 64, 25]`로 공간축만 multires 배율을 받고 시간축은 고정이다. 파라미터는 6 planes × 32 features × 해상도 × 2 scales로 수백만 개이며, 저장소에서 가장 전통적 ML에 가까운 부분이다."
+    },
+    {
+      "id": "27c747e6-f227-4474-9a7c-2270e8a84106",
+      "question": "`DeformNetwork`의 구조와 3-way head는 무엇인가?",
+      "answer": "`plane_features [N,64]`를 Linear(64→64) ReLU ×3 trunk에 넣고, `pos_head(→3)`, `quat_head(→4)`, `opacity_head(→1)`로 분기해 means/quats/opacities에 델타를 더한다."
+    },
+    {
+      "id": "ea86daf6-ae70-490e-b9b5-3cc19d782738",
+      "question": "`DeformNetwork`의 zero 초기화는 어떻게 보장되는가?",
+      "answer": "세 head 모두 `zeros_`로 초기화해 초기 상태가 항등 변형이며, `test_deform_net_zero_init_is_identity` 테스트가 이 성질을 못박아 놓았다."
+    },
+    {
+      "id": "6605c4ed-bccf-4b8a-a39f-4d31a6136ded",
+      "question": "`BilateralGrid`의 역할과 설정은 무엇인가?",
+      "answer": "학습 뷰별 색 보정을 담당하며 격자 shape은 `(16, 16, 8)`이 기본이다. `10 × total_variation_loss`로 TV 정규화를 걸어야 한다."
+    },
+    {
+      "id": "358bf781-2d6a-4f0c-b930-879fcae41d87",
+      "question": "gsplat이 지원하는 데이터 백엔드 5종은 무엇인가?",
+      "answer": "COLMAP(기본), NCore v4(멀티센서), EndoNeRF(수술 내시경 스테레오), 3DGS paper scenes, PandaSet(AV)이다. 모두 레이블이 없고 감독 신호는 학습 이미지 픽셀 자체다."
+    },
+    {
+      "id": "8a41a3b3-8614-47be-9e89-c279f4d75be4",
+      "question": "COLMAP `Parser.__init__`이 수행하는 첫 두 단계는?",
+      "answer": "① pycolmap으로 `cameras`, `images`, `points3D`를 읽고 world-to-camera 행렬을 추출한다. ② `K[:2,:] /= factor`로 다운샘플을 intrinsics에 반영한다."
+    },
+    {
+      "id": "1f789940-53d2-4510-bd3e-03a3df2ba370",
+      "question": "gsplat의 월드 공간 정규화는 어떤 세 변환의 합성인가?",
+      "answer": "`transform = T3 @ T2 @ T1`이다. T1은 `similarity_from_cameras()`(카메라 분포 기반 유사변환, `center_method=\"focus\"`), T2는 `align_principal_axes()`(포인트 클라우드 주축 정렬), T3는 위아래 뒤집힘 보정이다."
+    },
+    {
+      "id": "1db55b33-1d97-40f0-b1ff-e7339a4cbe64",
+      "question": "Parser의 위아래 뒤집힘 보정(T3) 휴리스틱은 무엇인가?",
+      "answer": "`median(z) > mean(z)`이면 x축으로 180° 회전한다. \"이미지에 바닥이 보이면 아래쪽에 점이 더 많다\"는 가정에 기반한 휴리스틱이며 오작동 가능성이 있다."
+    },
+    {
+      "id": "4eee54ec-02bb-4833-953b-0e3d5e26f69d",
+      "question": "Parser가 실제 이미지 크기를 COLMAP intrinsics와 대조하는 이유는?",
+      "answer": "첫 이미지를 읽어 비율 차이(`s_width`, `s_height`)를 K에 반영한다. Tanks&Temples가 2x 업샘플된 intrinsics를 저장하는 문제에 대응하기 위함이다."
+    },
+    {
+      "id": "49497939-e4e5-49b8-8ab1-5a0610694598",
+      "question": "Parser는 perspective와 fisheye 언디스토션 맵을 각각 어떻게 만드는가?",
+      "answer": "perspective는 `cv2.getOptimalNewCameraMatrix` + `cv2.initUndistortRectifyMap`을 쓴다. fisheye는 `theta` 다항식 $1 + k_1\\theta^2 + k_2\\theta^4 + k_3\\theta^6 + k_4\\theta^8$로 mapx/mapy를 직접 계산하고 유효 영역 mask와 ROI 크롭을 만든다."
+    },
+    {
+      "id": "cdf661b9-d178-4001-9131-639e2e835e77",
+      "question": "gsplat의 EXIF 노출 로드는 어떤 이미지에서 어떻게 이루어지는가?",
+      "answer": "`load_exposure=True`(기본 on)일 때 **원본(비다운샘플) 이미지**에서 읽으며 PNG는 EXIF를 지원하지 않는다. 전체 평균을 빼서 상대 EV로 변환한다."
+    },
+    {
+      "id": "1524f7b8-7b75-4810-bced-2bb75a3f4f23",
+      "question": "`scene_scale`은 어떻게 계산되고 어디에 쓰이는가?",
+      "answer": "`max(‖camera_pos - mean(camera_pos)‖)`로 계산한다. 트레이너가 `× 1.1 × global_scale`로 조정해 LR 스케일링(`means_lr`)과 밀도화 임계값의 정규화 기준으로 쓴다."
+    },
+    {
+      "id": "e8e5eaab-9d16-4049-80b5-e3bc50fea874",
+      "question": "COLMAP `Dataset.__getitem__`의 4단계는 무엇인가?",
+      "answer": "① `imageio.imread(path)[..., :3]`로 uint8 `[H,W,3]` 읽기 ② 왜곡 있으면 `cv2.remap` 언디스토션 + ROI 크롭 ③ `patch_size` 지정 시 랜덤 크롭 + K principal point 보정 ④ `torch.from_numpy(...).float()` (값 범위 0~255)."
+    },
+    {
+      "id": "b13870ab-5f1d-4281-8ee2-1bad85204670",
+      "question": "gsplat이 데이터 증강을 거의 쓰지 않는 이유는?",
+      "answer": "특정 장면에 과적합하는 것이 목표이므로 증강이 오히려 해롭다. 플립/회전/색상 변화는 카메라 포즈-이미지 대응을 깨뜨리며, 증강은 `patch_size` 지정 시의 랜덤 크롭 하나뿐이다(기본 None)."
+    },
+    {
+      "id": "11dead9b-003d-4b5d-a6e3-704fc67b32e4",
+      "question": "gsplat의 train/val 분리 방식과 그 장단점은?",
+      "answer": "`test_every=8` 기준 `indices % test_every != 0`이 train(87.5%), `== 0`이 val(12.5%)인 결정론적 stride 분할이다. 랜덤 셔플이 없어 재현 가능하지만 캡처 순서와 stride가 상관되면 편향될 수 있다."
+    },
+    {
+      "id": "42b3b13b-db29-47b3-815c-5e794ee57d88",
+      "question": "gsplat의 배치 구성 기본값(collate/batch_size/num_workers/shuffle)은?",
+      "answer": "커스텀 collate 없이 PyTorch 기본 `default_collate`를 쓰고, train batch_size는 1, val은 1 고정이다. num_workers는 train 4(persistent, pin_memory) / val 1이며 shuffle은 train만 True다."
+    },
+    {
+      "id": "79ad6ec6-c630-4a9f-bd02-1dc7ddb8ed59",
+      "question": "gsplat에서 `batch_size != 1`이 거부되는 경우는 언제인가?",
+      "answer": "카메라가 여러 개면(해상도가 다를 수 있음) 트레이너가 명시적으로 거부하고, PPISP 후처리도 `batch_size=1`을 강제한다. 기본 collate가 배치 내 동일 shape을 요구하기 때문이다."
+    }
+  ]
+}

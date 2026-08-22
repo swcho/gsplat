@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "bb33d962-b94f-4fc9-bffd-175f2406fed3",
+      "question": "`gsplat/cuda/include/TorchUtils.h`의 `to_torch_op<&fn>`은 무엇을 하는가?",
+      "answer": "네이티브 C++ 시그니처를 torch dispatcher 시그니처로 자동 평탄화하는 타입 마샬링 레이어다. `TorchArgDef<T>` 특수화를 추가하면 새 타입이 경계를 넘을 수 있다."
+    },
+    {
+      "id": "30297373-96cb-4384-849f-b06b64b9bbab",
+      "question": "gsplat의 \"reference implementation pairing\" 패턴이란?",
+      "answer": "모든 주요 CUDA 커널이 `gsplat/cuda/_torch_impl*.py`에 순수 PyTorch 쌍둥이 구현을 가지며, 테스트가 이 참조 구현과 수치 비교로 검증하는 구조다. 1,322개 테스트를 지탱하는 핵심 설계다."
+    },
+    {
+      "id": "1cb5191d-0233-478b-aff4-76ccef58ff42",
+      "question": "gsplat의 밀도화에 적용된 Strategy 패턴 구조는?",
+      "answer": "`Strategy` 기반 클래스가 `step_pre_backward` / `step_post_backward` 콜백 계약만 정의하고, `DefaultStrategy`(원논문 휴리스틱)와 `MCMCStrategy`가 이를 구현한다."
+    },
+    {
+      "id": "7e55f688-c52a-43fe-ac12-689f2f620cd6",
+      "question": "gsplat의 `Stage`가 구현하는 Registry 패턴은?",
+      "answer": "`Stage`가 `scene_id → (scene, render_fn)` 매핑을 들고 `render(scene_id, **kw)`로 디스패치한다. 학습 시에는 씬 1개, 추론 시에는 다중 씬을 다룬다."
+    },
+    {
+      "id": "a7fa72a6-089d-4185-8e9f-f8a2666d8c72",
+      "question": "gsplat 라이브러리의 실질적 단일 진입점은 무엇인가?",
+      "answer": "`gsplat/rendering.py:234`의 `rasterization()` 함수다. 3DGS/3DGUT/LiDAR/eval3d를 모두 커버하는 47개 인자짜리 단일 함수다."
+    },
+    {
+      "id": "1519f6d3-5db3-408b-b6ee-ef548ca59fea",
+      "question": "`gsplat/__init__.py`는 어떤 역할을 하는가?",
+      "answer": "174행 규모로 76개 공개 심볼을 평면적으로 재수출(`__all__`)한다."
+    },
+    {
+      "id": "e2164750-18b8-4fc1-847e-ef2c3b192395",
+      "question": "gsplat의 C++ 오케스트레이터 진입점은 어디인가?",
+      "answer": "`gsplat/cuda/csrc/Rendering.cpp:745`의 `rasterization_3dgs()`다. 전체 렌더 파이프라인이 이 함수 하나에 들어 있다."
+    },
+    {
+      "id": "3b396b3c-affc-4d95-9932-163d057af505",
+      "question": "gsplat의 학습 CLI 진입점과 CLI 프레임워크는?",
+      "answer": "`examples/simple_trainer.py:1503`의 `main()`이며 tyro 기반 서브커맨드(`default` / `mcmc`)를 제공한다. 멀티센서용으로는 `examples/av_trainer.py`가 있다."
+    },
+    {
+      "id": "5e2d4f5b-2bfa-4277-a7ef-1bb3acebf742",
+      "question": "gsplat 프로파일러 CLI는 어떻게 실행하는가?",
+      "answer": "`python -m gsplat.profile`로 실행하며 진입점은 `gsplat/profile.py:1180`의 `main()`이다."
+    },
+    {
+      "id": "34a178be-1e81-421d-9354-89937a974280",
+      "question": "v1.6.0에서 렌더 파이프라인 구조가 어떻게 바뀌었는가?",
+      "answer": "파이프라인 전체가 단일 C++ op(`rasterization_3dgs`)로 통합되었다. 예전처럼 Python이 projection → isect → rasterize를 순차 호출하지 않는다."
+    },
+    {
+      "id": "24230738-bc87-48f1-a7ce-729ac0fc54fb",
+      "question": "`rasterization()` 호출 시 Python 측에서 먼저 수행하는 작업은?",
+      "answer": "tile_size 해석, covars를 상삼각 6D로 변환, `RendererConfig` 검증(Mixed/ParallelBatch), distributed면 NCCL 그룹명과 world_size 확보를 수행한 뒤 `_make_lazy_cuda_func(\"rasterization_3dgs\")`를 호출한다."
+    },
+    {
+      "id": "0e3d7927-5c90-4c33-b8cf-38dad17425e1",
+      "question": "`rasterization_3dgs()` C++ 오케스트레이터의 10단계는 무엇인가?",
+      "answer": "① 입력 검증 ② Seam A(카메라 all-gather) ③ 투영 ④ projected opacities ⑤ 특징 조립 융합 fast-path ⑥ 메타데이터 캡처 ⑦ Seam B(all-to-all scatter) ⑧ 타일 교차 ⑨ 청크 단위 래스터화 ⑩ 출력 재조립이다."
+    },
+    {
+      "id": "3cc277f0-4af6-400b-97f7-5ebb09a3b4c2",
+      "question": "`rasterization_3dgs()`가 반환하는 값의 형태는?",
+      "answer": "렌더 결과와 전체 중간 텐서를 담은 19-튜플이다. Python 측 `rasterization()`이 여기에 absgrad를 부착하고 `meta` dict로 재포장해 `(render_colors, render_alphas, meta)`를 반환한다."
+    },
+    {
+      "id": "528c6d29-5798-4253-958c-295051903729",
+      "question": "gsplat에서 forward와 backward의 분해 단위가 다른 이유는?",
+      "answer": "forward는 단일 융합 op(`rasterization_3dgs`)지만, `loss.backward()` 시 dispatcher가 `register_autograd`로 등록된 Python `backward`를 호출하고 그것이 `torch.ops.gsplat.<op>_bwd`를 op 단위로 부르기 때문이다."
+    },
+    {
+      "id": "c3619e77-4aed-4d07-a578-3696e10cf200",
+      "question": "`simple_trainer.py`의 학습 준비 단계는 어떻게 구성되는가?",
+      "answer": "`create_splats_with_optimizers()`가 `ParameterDict{means, quats, scales, opacities, sh0, shN}`를 만들고, `GaussianScene.from_splats(...)`로 씬을 생성한 뒤 `Stage.add_scene(scene, rasterize_splats)`로 등록한다."
+    },
+    {
+      "id": "f4b644cc-fb10-44e7-8ed9-998f1d1b5f38",
+      "question": "학습 루프에서 SH 차수는 어떻게 점진적으로 올라가는가?",
+      "answer": "`sh_degree_to_use = min(step // sh_degree_interval, sh_degree)`로 계산해 스텝이 진행될수록 사용하는 SH 차수를 높인다."
+    },
+    {
+      "id": "471b731c-3ec1-457a-ac5d-0695c1d6024d",
+      "question": "`Runner.rasterize_splats`가 rasterization 호출 전에 적용하는 활성 함수는?",
+      "answer": "`scales=exp(·)`, `opacities=sigmoid(·)`를 적용하고 `colors=cat(sh0, shN)`으로 SH 계수를 결합한다."
+    },
+    {
+      "id": "f8d54327-d162-41b7-b61c-20ff51f7a652",
+      "question": "`simple_trainer.py`의 손실 함수 구성은?",
+      "answer": "`loss = lerp(l1_loss, ssim_loss, ssim_lambda)`를 기본으로 하고 depth / PPISP / opacity / scale 정규화 항을 더한다."
+    },
+    {
+      "id": "230b7b5a-4642-4d95-87b8-4bb6d4ed4a9a",
+      "question": "`DefaultStrategy`의 `step_pre_backward`가 하는 일은?",
+      "answer": "`info[\"means2d\"].retain_grad()`를 호출해 2D 평균의 gradient가 backward 이후에도 남아 있도록 한다. 이 gradient가 밀도화 판단 기준이 된다."
+    }
+  ]
+}

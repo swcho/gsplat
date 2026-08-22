@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "9841f033-6ff9-42bc-a3e6-4002576ab25f",
+      "question": "학습 루프에서 밀도화가 갖는 특이점은 무엇인가?",
+      "answer": "파라미터 텐서의 길이 자체를 매 스텝 바꾼다는 점이다. `strategy/ops.py:96`의 `_update_param_with_optimizer`가 파라미터와 Adam의 `exp_avg`/`exp_avg_sq`를 짝지어 재구성한다."
+    },
+    {
+      "id": "d86baed3-c940-4e7f-9339-555f1d5f6b70",
+      "question": "`Scene`이 제공하는 topology hook 6개는 무엇인가?",
+      "answer": "`on_duplicate`, `on_split`, `on_remove`, `on_relocate`, `on_sample_add`, `on_permute`다. 기본은 no-op이며 밀도화 시 사이드카 데이터를 동기화하는 확장점이다."
+    },
+    {
+      "id": "9d0162c6-6eef-4375-a54c-7c031da8760f",
+      "question": "HiGS 추론 렌더 경로(`experimental`)의 특징은?",
+      "answer": "gradient가 없는 추론 전용 경로다. fp16 패킹과 macro-tile 융합 래스터화로 지연을 줄이며, 별도 CUDAExtension(`gsplat.experimental.render.kernels.csrc`)으로 컴파일된다."
+    },
+    {
+      "id": "8a8e77f9-09f1-4fef-a2f8-5b2cc2cbede2",
+      "question": "`GaussianInferenceScene`은 어떻게 만들어지고 무엇을 검증하는가?",
+      "answer": "`GaussianInferenceScene.from_gaussian_scene(scene)`으로 만들며 `_build()`가 fp16 packed 레이아웃 + SH 압축을 구성한다. `_check_activation_contract()`와 `_check_fp16_range()`로 변환 시 가정을 검증한다."
+    },
+    {
+      "id": "00e90bc4-2320-43ca-bfc3-88ad859638d0",
+      "question": "HiGS 추론 커널의 실행 순서는?",
+      "answer": "`Projection.cu` → `MacroTileIntersect` / `IntersectMTFused` → `SegmentedSort.cu`(1,120행) → `MacroTileRasterize.cu` 순이며, `SHCompression.cu`가 SH 계수를 압축한다."
+    },
+    {
+      "id": "fad9b245-20bf-41a8-ae22-55f8a5c9b560",
+      "question": "`render_scene()`이 입력 타입에 대해 강제하는 계약은?",
+      "answer": "`isinstance(GaussianInferenceScene)` 검사를 수행하고 아니면 `TypeError`를 던진다. 반환 시 `metadata[\"render_path\"] = \"inference\"`를 설정한다."
+    },
+    {
+      "id": "bd098668-a7c2-40fb-856d-50d76666b9e5",
+      "question": "gsplat에서 가장 큰 소스 파일 3개는?",
+      "answer": "`gsplat/sensors/kernels/cuda/csrc/camera_torch.cpp`(5,631행), `gsplat/sensors/kernels/cameras/ops.py`(5,027행), `gsplat/cuda/csrc/Rasterization.cpp`(3,630행)다."
+    },
+    {
+      "id": "08ae33f9-84b9-469f-8f2a-daf742f30b0f",
+      "question": "`gsplat/rendering.py`의 책임은 무엇인가?",
+      "answer": "사용자 인자를 검증·정규화해 C++ 오케스트레이터로 넘기고, 반환 튜플을 `meta` dict로 재포장하는 렌더 파사드다. 1,717행 규모다."
+    },
+    {
+      "id": "051f5e81-f16a-42e9-8e79-4e7c518bb66a",
+      "question": "`rendering.py`가 노출하는 주요 렌더 함수들은?",
+      "answer": "`rasterization()`(주 경로), `rasterization_2dgs()`(2D Gaussian Splatting), `rasterization_inria_wrapper()` / `rasterization_2dgs_inria_wrapper()`(원본 구현 비교용), `_rasterization()`(순수 PyTorch autograd 경로, nerfacc 필요)이다."
+    },
+    {
+      "id": "1ee2f59d-efbb-4bde-88e1-08f22731eca2",
+      "question": "gsplat의 `RenderMode`가 가질 수 있는 값들은?",
+      "answer": "`\"RGB\"`, `\"d\"`, `\"Ed\"`, `\"D\"`, `\"ED\"`, `\"RGB-d\"`, `\"RGB-Ed\"`, `\"RGB+D\"`, `\"RGB+ED\"`다."
+    },
+    {
+      "id": "db891567-235c-4966-bc8a-97eee3d2bac5",
+      "question": "Gaussian depth(`D`/`ED`)와 hit distance(`d`/`Ed`)의 차이는?",
+      "answer": "Gaussian depth는 투영 z값의 가중합 $\\sum_i w_i z_i$로 `global_z_order`가 지배한다. hit distance는 래스터화 중 광선 방향 거리이며, **소문자**가 hit distance다."
+    },
+    {
+      "id": "79f98e72-fb9d-4604-9888-c54d4c8369ba",
+      "question": "RenderMode에서 `E` 접두가 의미하는 것은?",
+      "answer": "alpha로 정규화된 기댓값 $\\frac{\\sum w_i z_i}{\\sum w_i}$를 뜻한다."
+    },
+    {
+      "id": "d237c31a-a93b-4e45-8068-25e514028583",
+      "question": "gsplat의 텐서 배치 규약은 어떻게 되는가?",
+      "answer": "가우시안은 `[..., N, 3]`, 카메라는 `[..., C, 4, 4]` 형태다. 선행 `...`가 임의 배치 차원, `C`가 카메라 수다."
+    },
+    {
+      "id": "b3e2fbd0-ff54-468d-a302-83d44fe46581",
+      "question": "gsplat 배치 규약의 유일한 예외와 그 위험은?",
+      "answer": "SH 계수만 `[N, K, D]` 형태로 배치/카메라 차원을 공유한다. 이 예외가 shape 버그의 단골 지점이다."
+    },
+    {
+      "id": "673fa74c-66c5-4e89-a9c8-a14ac7b2ae10",
+      "question": "`RasterizeMode`가 가질 수 있는 값은?",
+      "answer": "`\"classic\"`과 `\"antialiased\"` 두 가지다."
+    },
+    {
+      "id": "5836ea5f-fff2-4a94-91ae-0bef24ba54eb",
+      "question": "`gsplat/cuda/_wrapper.py`의 세 가지 책임은?",
+      "answer": "등록된 모든 `gsplat::*` op에 대해 (a) 지연 로딩 호출 래퍼, (b) shape/dtype 검증, (c) Python autograd 등록을 제공한다. 3,216행 규모다."
+    },
+    {
+      "id": "e4342450-8123-4c13-a067-500c9d99aac4",
+      "question": "`_make_lazy_cuda_func(name)`은 어떻게 동작하는가?",
+      "answer": "클로저가 호출 시점에 `from ._backend import _C`를 실행해 JIT 컴파일을 첫 사용 시점까지 미룬다. 위치는 `gsplat/cuda/_wrapper.py:48`이다."
+    },
+    {
+      "id": "b1855fde-d91c-4c35-a0fc-6dfe655002de",
+      "question": "`_has_schema(op_name)`의 역할과 이점은?",
+      "answer": "`torch._C._dispatch_find_schema_or_throw`로 op가 빌드 플래그에 의해 컴파일 아웃되었는지 확인한다. 덕분에 부분 빌드가 import 에러 없이 동작한다."
+    },
+    {
+      "id": "6884deb4-90d8-417e-925c-b00667bc4d8e",
+      "question": "`_ensure_autograd_registrations()`는 무엇을 하는가?",
+      "answer": "12개 `Register*` 클래스(`base` op명 + `setup_context` + `backward`)를 1회만 등록한다. forward/backward op 쌍이 모두 존재할 때만 등록하며, `_AUTOGRAD_REGISTRATIONS_DONE` bool 가드로 멱등성을 보장한다."
+    }
+  ]
+}

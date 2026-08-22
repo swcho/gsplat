@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "cbb49f2e-7ec7-4835-a674-860ae015c3d3",
+      "question": "NCore v4란?",
+      "answer": "NVIDIA 캡처 포맷이며 `examples/datasets/ncore.py`가 파싱한다."
+    },
+    {
+      "id": "990d2064-76d1-4f47-bc16-e81a05f3f59c",
+      "question": "gsplat의 splat compression은 어떤 기법을 조합하는가?",
+      "answer": "PLAS 정렬 + product quantization + PNG 인코딩이다(`gsplat/compression/`)."
+    },
+    {
+      "id": "e2543b45-d0b5-4cf0-9a0e-2a2d23f06208",
+      "question": "새 CUDA op을 추가할 때 건드리는 파일 세트와 순서는?",
+      "answer": "`csrc/<Op>.cu` → `csrc/<Op>.h` / `include/Ops.h` → `ext.cpp`(스키마) → `_wrapper.py`(래퍼 + `Register*` autograd) → `_torch_impl*.py`(참조 구현) → `__init__.py`(재수출) → `tests/test_*.py` → 필요시 `build.py` 순이다."
+    },
+    {
+      "id": "29be0418-adab-4717-869c-4cbfbf506328",
+      "question": "\"CUDA op을 찾을 수 없다\"거나 `has_3dgut()`가 False일 때 무엇을 확인하는가?",
+      "answer": "빌드 플래그로 컴파일 아웃되었을 가능성이 가장 높다. `python -c \"import gsplat; print(gsplat.has_3dgut(), gsplat.has_2dgs(), gsplat.has_losses())\"`로 빌드 피처를 먼저 조회한다."
+    },
+    {
+      "id": "feaa8165-e154-442b-bfa9-3c6fb3764c8f",
+      "question": "`_has_schema()`의 조용한 False 반환이 왜 디버깅을 어렵게 하는가?",
+      "answer": "op이 없어도 즉시 실패하지 않고 조용히 False를 반환하므로 에러가 늦은 시점에 나타나기 때문이다."
+    },
+    {
+      "id": "6ff19e32-2c38-4d20-9a9b-f476730e33e7",
+      "question": "커널 수정이 반영되지 않을 때의 강제 재빌드 명령은?",
+      "answer": "`VERBOSE=1 DEBUG=1 TORCH_CUDA_ARCH_LIST=\"8.9\" python -c \"from gsplat.cuda._backend import _C\"`이며, 이 커맨드는 `_backend.py` 상단 docstring에 있다."
+    },
+    {
+      "id": "5a212472-0b9c-4c44-bb7c-6a5839c04d40",
+      "question": "수치가 참조 구현과 다를 때의 표준 디버깅 절차는?",
+      "answer": "`cuda/_torch_impl*.py`의 대응 함수로 A/B 비교하고, `FAST_MATH=0`으로 재빌드해 `-use_fast_math` 영향을 배제한다. `conftest.py`의 xfail 목록에 이미 알려진 케이스인지도 확인한다."
+    },
+    {
+      "id": "53f546b6-dc78-43e9-950b-aa75de8c75d9",
+      "question": "shape 에러가 났을 때 가장 먼저 확인할 것은?",
+      "answer": "배치 규약이다. 가우시안 `[..., N, 3]` vs 카메라 `[..., C, 4, 4]`, 그리고 SH 계수만 `[N, K, D]`로 배치/카메라 차원을 공유하는 예외를 확인한다. `GSPLAT_ENFORCE_CONTRACTS=1`이 더 이른 지점에서 잡아준다."
+    },
+    {
+      "id": "59a8ff39-89f2-4999-bed6-c66685875960",
+      "question": "gradient가 흐르지 않거나 None일 때 확인할 사항은?",
+      "answer": "`_ensure_autograd_registrations()`가 실행되었는지 확인한다. 이는 `_make_lazy_cuda_func`의 첫 호출에서만 일어나고 forward/backward op 쌍이 모두 등록되어야 한다. `absgrad`는 `with_eval3d=True`에서 부착되지 않는다."
+    },
+    {
+      "id": "a96e1634-07cb-45a0-bf53-d8fc69c365a0",
+      "question": "밀도화 후 학습이 발산할 때 점검할 항목은?",
+      "answer": "`_update_param_with_optimizer`가 파라미터와 Adam state를 짝지어 재구성했는지, `Scene`의 topology hook이 사이드카를 동기화했는지 확인한다. `DefaultStrategy`는 `with_eval3d`와 비호환이다."
+    },
+    {
+      "id": "79f9f256-5a17-4c27-ba73-95e23c586414",
+      "question": "FTheta 광각에서 화면이 잘릴 때의 해법과 금지 사항은?",
+      "answer": "`global_z_order=False`로 Euclidean 컬링으로 전환한다. `max_angle`을 올려 FOV를 넓히려는 시도는 금지인데, forward 다항식이 그 범위 밖에서 신뢰되지 않기 때문이다."
+    },
+    {
+      "id": "d1a4815b-d7e5-4a11-b093-e582da5768c8",
+      "question": "gsplat의 성능 조사에 쓸 수 있는 도구/명령은?",
+      "answer": "`python -m gsplat.profile`(내장 워크로드 벤치), `GSPLAT_INPUT_CAPTURE_RASTERIZATION=1`로 실제 입력 캡처 후 재생, `nsys profile`(trace.py의 NVTX range가 타임라인에 표시), `TIMEIT=1`로 `profile.timeit` 활성화다."
+    },
+    {
+      "id": "c2267dc1-00c5-47c8-b4e3-6ad1e7bb3023",
+      "question": "분산 학습에서 `meta`의 인덱스를 다룰 때 주의할 점은?",
+      "answer": "`gaussian_ids`/`radii` 등은 Seam B(scatter) **이전**의 rank-local 가우시안 축 기준이다. 밀도화가 이 인덱스를 쓰므로 전역 인덱스로 착각하면 안 된다."
+    },
+    {
+      "id": "88e7c663-95ca-4f8e-9fa6-5bc553ad778f",
+      "question": "멀티 GPU 없이 분산 경로를 검증할 수 있는 이유는?",
+      "answer": "`distributed=True`가 단일 GPU에서도 그대로 실행되기 때문이다. rank 1개에서 gather/scatter가 항등 연산이 되므로 멀티 GPU 확보 전에 로컬 재현이 가능하다."
+    },
+    {
+      "id": "0bf1b4a8-addb-4676-87a8-39136e7e461d",
+      "question": "gsplat에 DB 연동이 있는가?",
+      "answer": "없다. 순수 계산 라이브러리로 네트워크나 DB 연동이 없어 자체 공격 표면이 작다."
+    },
+    {
+      "id": "b6ae803a-f491-4219-84fd-c8bb03cd4e06",
+      "question": "첫 실행 JIT 컴파일의 운영상 함의는?",
+      "answer": "수 분이 걸리므로 프로덕션에서는 AOT wheel 또는 사전 빌드가 필요하다."
+    },
+    {
+      "id": "d2238256-01c1-4a49-99c4-a3d3d7f9f067",
+      "question": "`tests/` 디렉토리의 규모는?",
+      "answer": "1,322개 테스트 함수, 45K LOC, 71개 파일이며 `tests/cpp/`에 googletest 기반 C++ 단위 테스트가 있다. `tests/test_basic.py`만 8,241행이다."
+    },
+    {
+      "id": "b1410c47-46f3-4e9e-8165-08c1e6ff2d44",
+      "question": "`stage` 모듈이 4계층 규약을 \"부분 준수\"로 평가되는 이유는?",
+      "answer": "`components/`만 있고 `functional/`, `kernels/`, `models/`가 없기 때문이다. 다만 커널이 필요 없는 레지스트리이므로 타당한 것으로 평가된다."
+    }
+  ]
+}

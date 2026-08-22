@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "68f6eb34-cdbb-47d4-9703-82b4d0f06431",
+      "question": "`Dispatch.h` + `to_torch_op`를 읽을 때 권장되는 접근법은?",
+      "answer": "두 헤더 상단의 각 40행짜리 주석 블록이 사실상 튜토리얼이므로 그것부터 읽는다. 새 타입을 추가할 때는 `TorchArgDef<T>` 특수화만 하면 된다."
+    },
+    {
+      "id": "5776883c-3257-4129-8865-b0e1d8ecdfeb",
+      "question": "`sensors/kernels/cameras/ops.py`가 복잡한 이유와 접근법은?",
+      "answer": "pinhole/fisheye/ftheta × forward/backward × 배치 변형의 조합 폭발 때문이다. `functional/cameras.py`의 13개 함수에서 시작해 필요한 op만 따라 내려가고, FTheta 다항식 유효 구간 제약을 먼저 이해해야 한다."
+    },
+    {
+      "id": "f31d686e-d438-4cb1-bdab-0a43c7b4c260",
+      "question": "`strategy/ops.py`를 읽을 때 핵심 진입점은?",
+      "answer": "`_update_param_with_optimizer` 하나만 정확히 읽으면 나머지 8개 op가 그 위의 얇은 층이다."
+    },
+    {
+      "id": "357b35ab-a2ad-46dd-8705-5cc2295a70cb",
+      "question": "depth/hit-distance 모드 조합의 복잡도를 다루는 방법은?",
+      "answer": "`rendering.py:136-162`의 6개 술어 헬퍼를 진리표로 정리해두고 참조한다. `D`/`ED`/`d`/`Ed`가 대소문자로만 구분되고 `global_z_order`가 의미를 또 바꾸기 때문이다."
+    },
+    {
+      "id": "ee4b2eca-87b6-4a7e-9ac4-d8f35774daf5",
+      "question": "`channel_chunk`의 기본값과 성능 함의는?",
+      "answer": "기본 32이며, 이를 초과하는 채널은 청크 루프로 순차 처리된다. docstring이 \"D > 32에서 느리다\"고 명시하므로 고차원 특징 렌더링 시 병목이 된다."
+    },
+    {
+      "id": "7862ed02-a197-46f8-a3bf-6202d91b2cb1",
+      "question": "`segmented` radix sort의 성능 특성은?",
+      "answer": "정렬 자체는 빠르지만 offset 인덱스로 인한 추가 global memory 접근 때문에 대부분의 경우 전체적으로 느리다. 기본값 `False`가 맞다."
+    },
+    {
+      "id": "b3221b4f-6bed-418e-b439-5532c09ad6ac",
+      "question": "gsplat의 보안 관점에서 지적된 공급망 이슈는?",
+      "answer": "`[dev]` extras가 `PLAS @ git+https://github.com/fraunhoferhhi/PLAS.git`로 git URL을 커밋 핀 없이 참조한다. 업스트림이 바뀌면 개발 환경이 조용히 변하므로 커밋 SHA 핀이 바람직하다."
+    },
+    {
+      "id": "22938096-da55-4f3d-bea9-d0be67852597",
+      "question": "gsplat의 체크포인트 로딩에서 올바르게 선택된 보안 옵션은?",
+      "answer": "`torch.load(..., weights_only=True)`를 사용한다(`examples/simple_trainer.py:1533`). 다른 로드 경로도 동일한지 유지 확인이 필요하다."
+    },
+    {
+      "id": "055c98c0-515b-450d-9081-9a405dac5512",
+      "question": "`GSPLAT_INPUT_CAPTURE_*`의 보안 주의점은?",
+      "answer": "활성화하면 입력 텐서가 디스크에 덤프되므로, 민감한 데이터셋으로 학습할 때는 이 변수를 켜지 않도록 주의해야 한다."
+    },
+    {
+      "id": "ce833984-6282-4e4a-a58e-a9b4084de8cc",
+      "question": "최근 6개월간 churn이 가장 높은 파일 3개는?",
+      "answer": "`gsplat/cuda/_wrapper.py`(104회), `tests/test_basic.py`(102회), `gsplat/cuda/ext.cpp`(77회)다."
+    },
+    {
+      "id": "0f9412a8-eebe-401f-9510-b1dc88ebb513",
+      "question": "churn 집중이 유발하는 유지보수 리스크는?",
+      "answer": "`_wrapper.py`, `ext.cpp`, `Rasterization.cpp` 세 파일에 변경이 집중되어 병합 충돌 위험이 상시 존재한다. 도메인별 분할 제안이 이를 직접 겨냥한다."
+    },
+    {
+      "id": "d89ea78e-1cea-4aa7-b741-0046d608dea3",
+      "question": "gsplat의 `python_requires` 메타데이터에 대한 지적은?",
+      "answer": "`>=3.7`로 되어 있으나 코드가 `from __future__ import annotations`, `X | None` 문법, C++20을 쓰고 CI는 3.10에서 돈다. 실제로 3.7은 지원되지 않으므로 `>=3.9` 이상으로 정정하는 편이 정직하다."
+    },
+    {
+      "id": "72d0e0d7-115d-4322-943b-d8ebec7167b7",
+      "question": "`RasterizeToPixelsFromWorld3DGS*` 파일명 변화가 시사하는 것은?",
+      "answer": "git log에는 `...Bwd.cu`(51회) / `...Fwd.cu`(43회)가 나오는데 현재 트리에는 `...SerialBatchFwd.cu` / `...ParallelBatchBwd.cu`로 존재한다. 최근 Serial/Parallel 분리 리팩터가 있었고 이 영역이 아직 유동적이라는 신호다."
+    },
+    {
+      "id": "f075e055-c9b5-4664-9fc7-32c812bc7b77",
+      "question": "gsplat을 처음 읽을 때 권장되는 첫 번째 문서는?",
+      "answer": "`docs/modules-design.md`다. 4계층 규약(`functional`/`kernels`/`models`/`components`)을 모르면 디렉토리 구조가 무작위로 보인다."
+    },
+    {
+      "id": "8628f931-d1ed-431b-b76e-7dcd5da96b25",
+      "question": "gsplat 필수 파일 읽기 순서 5단계는?",
+      "answer": "① `docs/modules-design.md` ② `rendering.py:234` `rasterization()` ③ `csrc/Rendering.cpp:745` `rasterization_3dgs()` ④ `cuda/_wrapper.py:48-113` 지연 로딩 3종 ⑤ `examples/simple_trainer.py`의 `Runner.train()` 순이다."
+    },
+    {
+      "id": "736c6d26-e789-4a1b-80b9-2a6aa7f93957",
+      "question": "커널을 수정할 예정이라면 읽기 순서에 무엇을 추가해야 하는가?",
+      "answer": "6번째로 `gsplat/cuda/build.py`의 `get_build_parameters()`를 추가한다."
+    },
+    {
+      "id": "21388955-da93-4596-b238-58bfa6cd0459",
+      "question": "`splat`이란 무엇인가?",
+      "answer": "화면에 투영된 하나의 3D 가우시안이다. 파라미터는 `means`, `quats`, `scales`, `opacities`, SH 계수로 구성된다."
+    },
+    {
+      "id": "ec67467a-0d2d-433e-b59d-c5fb0d316b0c",
+      "question": "3DGUT란 무엇인가?",
+      "answer": "NVIDIA의 3D Gaussian Unscented Transform이다. `with_ut=True`로 활성화하며 왜곡과 롤링셔터를 Unscented Transform으로 처리한다."
+    }
+  ]
+}

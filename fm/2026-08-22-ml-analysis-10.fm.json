@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "df2fb02c-4373-4758-9561-be952a6515da",
+      "question": "커널 문제인지 학습 설정 문제인지 가르는 방법은?",
+      "answer": "`gsplat/cuda/_torch_impl*.py`의 대응 함수에 같은 입력을 흘려보내 A/B 비교한다. 추가로 `FAST_MATH=0` 재빌드로 `-use_fast_math` 영향을 배제할 수 있다."
+    },
+    {
+      "id": "2e7ad49b-cf40-4960-b656-5d30722ceba6",
+      "question": "밀도화가 조용히 아무것도 하지 않을 때의 원인은?",
+      "answer": "`step_pre_backward`가 `loss.backward()` 전에 호출되지 않아 `info[\"means2d\"].retain_grad()`가 빠진 경우다. 그러면 `means2d.grad`가 None이 되어 밀도화가 gradient를 볼 수 없다."
+    },
+    {
+      "id": "96fd05b5-7616-4740-adb8-77d934c7f89b",
+      "question": "`DefaultStrategy`와 `with_eval3d`가 비호환인 이유는?",
+      "answer": "eval3d는 2D 평균을 만들지 않으므로 `means2d.grad`가 존재하지 않는다. 트레이너가 경고만 출력하고 진행하므로, 3DGUT를 쓰려면 `mcmc` 서브커맨드를 써야 한다."
+    },
+    {
+      "id": "1141877c-8686-49e7-8e65-d3c86d5f11ee",
+      "question": "장면이 위아래 뒤집혀 렌더될 때 확인할 것은?",
+      "answer": "Parser의 T3 휴리스틱(`median(z) > mean(z)`)이 오작동한 경우다. `normalize_world_space=False`로 정규화를 끄고 배제 테스트를 해본다."
+    },
+    {
+      "id": "87381762-0fec-476f-869d-515bf8bbca7c",
+      "question": "FTheta 광각에서 화면이 잘릴 때의 해결책은?",
+      "answer": "`global_z_order=False`가 필요하다. `max_angle`을 올려 FOV를 넓히려 하는 것은 잘못된 접근이다."
+    },
+    {
+      "id": "d1dd7870-b506-4bad-8f78-e3548d064529",
+      "question": "depth 채널의 `D`/`ED`와 `d`/`Ed` 차이는 무엇인가?",
+      "answer": "대문자 `D`/`ED`는 투영 z, 소문자 `d`/`Ed`는 광선 거리다. 대소문자만 다르고 `global_z_order`가 의미를 또 바꾸므로 혼동하기 쉽다."
+    },
+    {
+      "id": "a50ac6c7-bbe4-4397-95aa-565ed3821964",
+      "question": "gsplat의 성능 조사에 쓰는 도구와 명령은?",
+      "answer": "`python -m gsplat.profile`(내장 워크로드 벤치 및 캡처 리플레이), `GSPLAT_INPUT_CAPTURE_RASTERIZATION=1` + `GSPLAT_INPUT_CAPTURE_DIR`로 실제 입력 덤프, `nsys profile`로 NVTX range 타임라인 확인이다."
+    },
+    {
+      "id": "0256bf68-2358-454b-8189-e5ecc174f76f",
+      "question": "gsplat의 학습 속도와 렌더 속도는 각각 어디서 보는가?",
+      "answer": "학습 속도는 tqdm의 it/s, TensorBoard `train/mem`, 뷰어의 `num_train_rays_per_sec`로 본다. 렌더 속도는 평가의 `ellipse_time`(이미지당 초)이다."
+    },
+    {
+      "id": "806b182f-6cbb-4941-9d0f-71c3d42dc741",
+      "question": "채널 수가 32를 넘으면 어떤 성능 문제가 생기는가?",
+      "answer": "`channel_chunk=32`를 넘는 채널은 순차 청크 처리되어 D>32에서 병목이 의심된다."
+    },
+    {
+      "id": "7cf54757-ca18-4052-a9dc-e3b239a125d3",
+      "question": "분산 학습에서 `meta`의 `gaussian_ids`/`radii`를 해석할 때 주의점은?",
+      "answer": "Seam B(scatter) **이전**의 rank-local 가우시안 축 기준이다. 전역 인덱스로 착각하면 안 된다."
+    },
+    {
+      "id": "63a7b38d-48c9-489d-9cfc-eee2e5e7c79c",
+      "question": "분산 학습 디버깅 시 잊지 말아야 할 플래그는?",
+      "answer": "`--steps_scaler`를 GPU 수의 역수로 주는 것이다(밀도화 스케줄까지 함께 스케일된다). 그리고 `--packed`가 rank 간 전송량을 줄여 더 빠르다."
+    },
+    {
+      "id": "78ee2c25-462f-4399-bce7-1abf96e1004f",
+      "question": "gsplat의 압축(compression) 경로는 어떻게 구성되는가?",
+      "answer": "`gsplat/compression/`에서 학습 후 splat을 PLAS + PQ(torchpq) + PNG로 압축한다. `run_compression(step)`이 평가 시점에 실행된다."
+    },
+    {
+      "id": "539d5539-40e3-4933-8a04-ea17cfbc45ca",
+      "question": "gsplat의 `losses_fused.py`는 무엇인가?",
+      "answer": "CUDA 융합 손실을 제공하는 모듈로 `FusedGaussianLosses`가 `nn.Module`로 구현되어 있다. `GaussianLossesCUDA.cu` 커널을 감싼다."
+    },
+    {
+      "id": "a0c8086e-403d-42be-9cf8-c42e5ddaa134",
+      "question": "gsplat의 `training/schedulers.py`에는 무엇이 있는가?",
+      "answer": "`TwoStageScheduler`가 있어 coarse→fine 2단계 스케줄을 제공한다. 단 `simple_trainer.py`는 `ExponentialLR`과 `ChainedScheduler`를 직접 쓴다."
+    },
+    {
+      "id": "0fe9fe25-cbbf-49a4-95b3-f0d3d70c2c1e",
+      "question": "gsplat의 `init_utils.py`가 제공하는 초기화 함수는?",
+      "answer": "`knn_scale_init`(3-NN 거리 기반 scale 초기화)과 `multi_frame_depth_unprojection`(여러 프레임 depth를 역투영해 포인트 생성)이다."
+    },
+    {
+      "id": "0a9ec7ab-e631-48c8-92ce-d95881227904",
+      "question": "AccuTile은 무엇을 개선한 기법인가?",
+      "answer": "타원 타일 교차 판정을 보수적으로 정확하게 수행하는 기법으로 `IntersectTile.cu`에 구현되어 있다(PR #927). gsplat에서 기본 활성이다."
+    },
+    {
+      "id": "11f980bf-9e10-4854-892a-09f589f6a6c2",
+      "question": "gsplat 커널의 query ops는 무엇을 제공하는가?",
+      "answer": "픽셀별로 기여한 가우시안 ID, 개수, top-k를 반환한다. `RasterizeContributingGaussianIds.cu`, `RasterizeTopContributingGaussianIds.cu`가 담당한다."
+    },
+    {
+      "id": "b6b4a11c-abcd-4a72-b235-e4046cfa7d70",
+      "question": "`av_trainer.py`와 `dynamic_surgical_trainer.py`는 각각 무엇을 위한 트레이너인가?",
+      "answer": "`av_trainer.py`는 자율주행 멀티센서(카메라 + LiDAR) 학습용, `dynamic_surgical_trainer.py`는 G-SHARP 4D 동적 수술 씬용이다."
+    },
+    {
+      "id": "9651d5d3-e4c9-4035-b662-da5b4846c908",
+      "question": "gsplat 프로젝트의 규모와 구조적 특징은?",
+      "answer": "Python 파일 292개, CUDA 커널 약 56K LOC, 테스트 1,322개다. `configs/` 디렉토리가 없어 설정이 코드 안에 살고, torch가 163개 파일에서 import된다."
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "fbd49fa3-efb6-49e3-8341-87f57cfec559",
+      "question": "`cc_psnr`/`cc_ssim`/`cc_lpips`는 무엇을 위한 지표인가?",
+      "answer": "색 보정(affine 또는 quadratic) 후 계산한 지표로, 후처리 방법(bilateral grid, PPISP 등) 간 공정 비교를 위해 쓴다."
+    },
+    {
+      "id": "5b35ae52-35f4-4e2c-8f59-3c16d7408fbb",
+      "question": "\"eval3d\"는 무엇을 의미하는가?",
+      "answer": "2D 화면 공간이 아니라 3D 월드 공간에서 가우시안 응답을 평가하는 방식이다. `with_ut`과 함께 3DGUT 경로를 구성하며 fisheye/ftheta 결과의 정확도에 필요하다."
+    },
+    {
+      "id": "200740f1-1931-4c3e-ad37-c27021ca03f8",
+      "question": "PPISP와 bilateral grid의 관계는 무엇인가?",
+      "answer": "둘 다 학습 뷰의 노출/색 보정 후처리로 서로의 대안이다. PPISP는 NVIDIA Per-Pixel ISP(외부 `ppisp` 패키지)이고, bilateral grid는 `(16,16,8)` 격자에 TV 정규화를 쓴다."
+    },
+    {
+      "id": "2075f084-427d-4214-b099-29b1a784df01",
+      "question": "HiGS는 무엇이며 어떤 제약이 있는가?",
+      "answer": "Hierarchically Tiled Gaussian Splatting으로 fp16 macro-tile 융합 래스터화를 쓴다. **추론 전용 경로여서 gradient가 없다**."
+    },
+    {
+      "id": "c2d33203-03d2-4474-8a6f-99efae9b745c",
+      "question": "gsplat에서 하이퍼파라미터만 바꾸는 실험은 어떻게 하는가?",
+      "answer": "파일 수정 없이 CLI로 가능하다. 예: `--ssim_lambda 0.3 --means_lr 3e-4`, `mcmc --strategy.cap-max 500000`. 전체 플래그는 `--help`로 확인한다."
+    },
+    {
+      "id": "a76fc35f-6d9f-4452-850f-8c5773d08fd2",
+      "question": "gsplat에 새 프리셋(서브커맨드)을 추가하려면 어디를 고치는가?",
+      "answer": "`examples/simple_trainer.py`의 `configs` dict에 `\"myexp\": (\"설명\", Config(...))` 항목을 추가한다. 예: `Config(absgrad=True, strategy=DefaultStrategy(grow_grad2d=8e-4))`."
+    },
+    {
+      "id": "ec598b54-8857-45d3-ad6c-601d5180944e",
+      "question": "gsplat에 새 하이퍼파라미터를 추가하는 방법은?",
+      "answer": "`Config` dataclass에 필드를 추가하면 tyro가 CLI에 자동 노출한다. 그 후 실제 사용처에 로직을 연결하면 된다."
+    },
+    {
+      "id": "5114ded8-a06b-4760-b251-baebc54920e6",
+      "question": "gsplat에서 손실을 바꾸려면 어디를 건드리는가?",
+      "answer": "새 항 추가는 `Runner.train()`의 loss 조립 블록, 새 손실 함수 정의는 `gsplat/losses.py`(이미 40개 이상 있으니 먼저 확인), 가중치만이면 `Config`의 `ssim_lambda`/`depth_lambda`/`opacity_reg`/`scale_reg`다."
+    },
+    {
+      "id": "f3955759-8854-4664-88dc-74e0f672d670",
+      "question": "gsplat에서 데이터셋을 교체하는 4단계는 무엇인가?",
+      "answer": "① `Parser` 클래스 작성(필수 속성 다수) ② `Dataset` 작성(`__getitem__`이 `{K, camtoworld, image, image_id, camera_idx}` 반환) ③ `Runner.__init__`의 `data_type` 분기에 등록 ④ `Config`에 백엔드별 옵션 추가다."
+    },
+    {
+      "id": "18b1557e-0613-4e16-a0de-1383d3a1fbb1",
+      "question": "새 `Parser`가 반드시 제공해야 하는 속성은 무엇인가?",
+      "answer": "`image_paths`, `camtoworlds`, `Ks_dict`, `params_dict`, `imsize_dict`, `mask_dict`, `points`, `points_rgb`, `camera_ids`, `camera_indices`, `num_cameras`, `scene_scale`, `exposure_values`이며 `depth_loss`용으로 `point_indices`, `points_err`도 필요하다."
+    },
+    {
+      "id": "60530968-29fd-4dfc-bb55-e3afe1e38793",
+      "question": "새 Parser를 작성할 때 참고할 기존 예시는 무엇인가?",
+      "answer": "`colmap.py`(562행, 가장 단순), `ncore.py`(1,140행, 멀티센서), `endonerf.py`(304행, 스테레오+depth)다."
+    },
+    {
+      "id": "1ad5aa62-1186-4255-af8c-a9209d1a39bb",
+      "question": "새 밀도화 전략 클래스를 추가할 때 구현할 메서드와 등록 지점은?",
+      "answer": "`Strategy` 상속 후 `check_sanity`, `initialize_state`, `step_pre_backward`, `step_post_backward`를 구현하고 `gsplat/strategy/ops.py`의 9개 원시 연산을 재사용한다. 등록은 `Config.strategy` Union, `adjust_steps()`, `Runner.__init__`, `train()`의 **4곳 모두**이며 `assert_never`가 누락을 잡아준다."
+    },
+    {
+      "id": "5c238c2c-8c25-40f4-80f2-4c42efdcd090",
+      "question": "gsplat에서 초기화나 optimizer를 바꾸려면 어디를 고치는가?",
+      "answer": "둘 다 `create_splats_with_optimizers()`다. 초기화는 `init_type` 분기와 knn 기반 scale 초기화, optimizer는 `optimizer_class` 분기와 `betas`/`eps`/`lr` 스케일링 로직이며 \"파라미터 1개당 optimizer 1개, param_group 1개\" 규약을 반드시 지켜야 한다."
+    },
+    {
+      "id": "b9397e17-682a-4324-ad62-c09595702db3",
+      "question": "gsplat의 텐서 배치 규약 세 가지는 무엇인가?",
+      "answer": "가우시안은 `[..., N, 3]`(선행 `...`이 배치), 카메라는 `[..., C, 4, 4]`, SH 계수는 `[N, K, D]`로 **배치/카메라 차원을 공유하는 예외**다. SH만 다른 규약을 쓰는 것이 shape 버그의 단골 지점이다."
+    },
+    {
+      "id": "09a1feae-dd23-402e-bb3e-8e3ef80e275b",
+      "question": "shape mismatch 디버깅에서 먼저 해볼 일은 무엇인가?",
+      "answer": "`GSPLAT_ENFORCE_CONTRACTS=1`로 계약 검증을 조기 발동시키고, `app_opt` 경로(파라미터가 `features`/`colors`로 바뀜)와 batch_size 제약(카메라 여러 개 → 1 강제)을 확인한다."
+    },
+    {
+      "id": "c1c7e627-9437-40c0-8c24-34caea9ced55",
+      "question": "OOM 디버깅의 확인 순서는 무엇인가?",
+      "answer": "① TensorBoard `train/num_GS`가 무한정 자라는지 확인(DefaultStrategy는 상한 없음) ② `train/mem` 곡선이 `refine_every=100` 경계에서 튀는지 확인 ③ 완화 플래그 적용 ④ `tb_save_image=False` 확인이다."
+    },
+    {
+      "id": "26eeb309-c7a9-4a61-bb6d-1babb67cabee",
+      "question": "OOM 완화책 중 1순위로 권장되는 것은 무엇인가?",
+      "answer": "`--absgrad --strategy.grow-grad2d 8e-4`다. 메모리를 절반으로 줄이면서 품질도 개선하기 때문이다. 그다음이 `--packed`, `--data_factor 8`, `mcmc --strategy.cap-max 500000`, `--visible_adam`, `--sparse_grad --packed`, `--lpips_net alex`다."
+    },
+    {
+      "id": "768b0e39-ebb0-4770-a6bc-2ad89727eadd",
+      "question": "loss 발산/NaN 시 `scene_scale`을 확인해야 하는 이유는?",
+      "answer": "`means_lr`에 `scene_scale`이 곱해지므로 정규화 실패나 카메라 분포 이상으로 `scene_scale`이 잘못되면 LR이 폭발한다. 시작 로그의 `Scene scale:` 값을 확인해야 한다."
+    },
+    {
+      "id": "e8b87364-4530-4c07-945c-37c6091ca87d",
+      "question": "`absgrad=True`로 바꿀 때 반드시 함께 조정할 것은 무엇인가?",
+      "answer": "`grow_grad2d`를 8e-4 수준으로 **반드시** 올려야 한다. 절댓값 gradient를 쓰면 gradient 크기 자체가 달라지기 때문이다."
+    }
+  ]
+}

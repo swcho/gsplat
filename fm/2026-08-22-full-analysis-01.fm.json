@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "3550d5c4-9e3a-4dac-8962-1fc5032294b3",
+      "question": "gsplat 라이브러리의 핵심 목적은 무엇인가?",
+      "answer": "3D Gaussian Splatting의 미분 가능한(differentiable) 래스터라이제이션을 CUDA로 가속하고 Python API로 노출하는 라이브러리다. SIGGRAPH 논문 *3D Gaussian Splatting for Real-Time Rendering of Radiance Fields*의 구현을 출발점으로 재작성되었다."
+    },
+    {
+      "id": "8aef4456-1c0f-40c1-9bc8-d741e25b9ce0",
+      "question": "gsplat이 원본 3DGS 구현 대비 목표로 삼은 성능 개선치는?",
+      "answer": "최대 4배 적은 GPU 메모리 사용과 15% 짧은 학습 시간이다."
+    },
+    {
+      "id": "68b1d294-2e85-4419-adb5-bfb111925f31",
+      "question": "gsplat이 \"연구용 커널 라이브러리\"라고 불리는 이유는?",
+      "answer": "학습 파이프라인(trainer)은 `examples/`에 예시로만 존재하고, 패키지 본체는 forward/backward 커널과 그 위의 얇은 Python 계약(shape/dtype 검증, autograd 등록)만 제공하기 때문이다. nerfstudio 같은 다운스트림이 자체 트레이너를 붙일 수 있도록 설계되었다."
+    },
+    {
+      "id": "63c497b6-bda0-42b1-a3a0-7d14227d292a",
+      "question": "gsplat이 사용하는 주요 언어와 표준 버전은?",
+      "answer": "Python ≥3.7(실제 CI는 3.10), C++20, CUDA(12.6 / 12.8 / 13.2 검증)다. C++20을 요구하는 이유는 `dispatch::` 라이브러리와 `to_torch_op` 마샬링이 concepts와 템플릿 람다에 의존하기 때문이다."
+    },
+    {
+      "id": "17ae47c4-b807-4b0e-aadf-3673fd75672c",
+      "question": "gsplat이 요구하는 PyTorch 최소 버전과 사용하는 핵심 PyTorch 기능은?",
+      "answer": "PyTorch ≥2.7이며, `torch.library` custom op / custom class 기반으로 커널을 등록한다."
+    },
+    {
+      "id": "5d2b87f0-96df-4e22-b499-a01fb74c4757",
+      "question": "gsplat의 빌드 스택은 어떻게 구성되는가?",
+      "answer": "setuptools + `torch.utils.cpp_extension`을 이용한 AOT 빌드와 ninja, 그리고 JIT fallback 조합이다."
+    },
+    {
+      "id": "ac569c78-fe75-4714-b701-7e4cdca9be8c",
+      "question": "gsplat이 사용하는 테스트 도구는 무엇인가?",
+      "answer": "pytest, pytest-check, pytest-xdist, pytest-env를 쓰고, C++ 단위 테스트에는 googletest를 사용한다."
+    },
+    {
+      "id": "09fef9cd-3a8e-4e3b-b36b-660612cd4ce0",
+      "question": "gsplat의 포맷/린트 도구 구성은?",
+      "answer": "black 22.3.0, isort 5.10.1, clang-format 22.1.5, pylint을 사용하며 `lint/format-code.sh`가 이들을 통합해 pre-commit으로 실행된다."
+    },
+    {
+      "id": "ac7e0c3c-7119-47ae-88cf-d879a521d896",
+      "question": "gsplat의 선택적(optional) 의존성에는 어떤 것들이 있는가?",
+      "answer": "scipy(LiDAR), cupy, nerfacc, PLAS, torchpq(압축) 등이다."
+    },
+    {
+      "id": "52680c4e-3a70-4d13-b664-c3586a50bf6d",
+      "question": "gsplat 저장소의 대략적인 소스 규모는?",
+      "answer": "약 132K LOC(gsplat 패키지) + 45K LOC(tests) + 13K LOC(examples)이며, 저장소 루트 기준 2,658개 파일이다."
+    },
+    {
+      "id": "06fe0ec7-3159-41af-8f4e-b66174f5c7e9",
+      "question": "`gsplat/cuda/` 디렉토리의 규모와 역할은?",
+      "answer": "56K LOC, 108개 파일로 구성된 핵심 커널 레이어다. `_wrapper.py`(op 바인딩), `_torch_impl*.py`(참조 구현), `build.py`, `ext.cpp`, `csrc/`, `include/`를 포함한다."
+    },
+    {
+      "id": "12b60043-2312-4753-81fd-1c12d42a04ce",
+      "question": "`docs/modules-design.md`가 규정하는 4계층 모듈 규약은 무엇인가?",
+      "answer": "`functional/`(Layer 1, 공개 stateless API), `kernels/`(Layer 0, 백엔드 디스패치·autograd glue·네이티브 바인딩), `models/`(Layer 2, nn.Module 래퍼), `components/`(Layer 2', nn.Module을 의도적으로 상속하지 않는 stateful 래퍼)다."
+    },
+    {
+      "id": "169fee4a-54df-40f9-b465-899ac752dcdc",
+      "question": "4계층 규약에서 `kernels/`와 `functional/`의 역할 차이는?",
+      "answer": "`kernels/`는 Layer 0으로 백엔드 디스패치, autograd glue, 네이티브 바인딩을 담당하고, `functional/`은 Layer 1로 도메인 용어와 shape/dtype 계약을 갖는 공개 stateless API를 제공한다."
+    },
+    {
+      "id": "f30076d5-502b-45af-8de6-73feb87eda36",
+      "question": "`components/`가 `models/`와 다른 점은?",
+      "answer": "`models/`는 학습 가능 파라미터를 갖는 `torch.nn.Module` 래퍼인 반면, `components/`는 `nn.Module`을 **의도적으로 상속하지 않는** stateful 래퍼다."
+    },
+    {
+      "id": "9df904ad-de8f-49e2-9f4e-d2616fd830f7",
+      "question": "4계층 규약을 따르는 모듈과 따르지 않는 모듈은?",
+      "answer": "`sensors`, `geometry`, `scene`, `stage`, `experimental/render`가 규약을 따른다. 반면 `gsplat/cuda/`는 규약 이전에 작성된 레거시 레이아웃(모든 op가 `_wrapper.py`에 평면적으로 모임)이며 `strategy`도 비준수다."
+    },
+    {
+      "id": "f3bfec43-753a-4450-8107-b0e15d033f93",
+      "question": "gsplat 코드베이스 이해의 주된 장애물로 지목된 비대칭은 무엇인가?",
+      "answer": "`gsplat/cuda/`가 전체 소스의 42%(56K LOC)를 차지하면서도 `modules-design.md`의 4계층 규약 밖에 있는 레거시 평면 레이아웃이라는 점이다."
+    },
+    {
+      "id": "43b94529-b8b5-4236-b54e-ebd7668a9aaa",
+      "question": "gsplat의 Lazy native extension loading 패턴은 어떻게 구현되는가?",
+      "answer": "PEP 562 `__getattr__`을 이용하며, `gsplat/_lazy_backend.py`의 `make_lazy_backend()`가 \"prebuilt import → JIT build → raise\" 정책을 한 곳에 모은다. CPU-only 머신에서 import가 컴파일을 트리거하지 않는 것이 요구사항이다."
+    },
+    {
+      "id": "2a1dfc4b-6e0f-44bc-b161-0e69bd4c90c8",
+      "question": "gsplat이 커널 스키마 선언과 역전파 등록을 분리한 방식은?",
+      "answer": "커널 스키마는 C++에서 `TORCH_LIBRARY(gsplat, m)`으로 선언하고(`gsplat/cuda/ext.cpp`), 역전파는 Python에서 `torch.library.register_autograd`로 붙인다. TorchScript 배포와 `torch.compile` 호환을 위한 선택이다."
+    },
+    {
+      "id": "62eae3d9-b348-46b0-b71c-3a4e8d84aec2",
+      "question": "`gsplat/cuda/include/Dispatch.h`의 역할은?",
+      "answer": "런타임 int/variant 값을 컴파일타임 템플릿 인자로 승격시키는 조합 디스패처다. `project<BlockSize, Camera, Distortion, BatchSize>` 같은 커널의 카테시안 인스턴스화를 선언적으로 생성한다."
+    }
+  ]
+}

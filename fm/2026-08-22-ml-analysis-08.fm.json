@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "6601f35c-3228-4e92-94e4-07802f7c4660",
+      "question": "gsplat OOM의 가장 큰 위험 요인은 무엇인가?",
+      "answer": "`DefaultStrategy`에 가우시안 개수 상한이 **없다**는 점이다. Garden 기본 설정이 4.46M까지 자라며, 완화책은 `MCMCStrategy --strategy.cap-max N` 또는 `--absgrad --strategy.grow-grad2d 8e-4`(메모리 절반)다."
+    },
+    {
+      "id": "727685fc-0cf5-4737-baac-eff012a6e503",
+      "question": "밀도화 순간의 메모리 피크가 왜 놓치기 쉬운가?",
+      "answer": "파라미터와 optimizer state를 **새로 할당한 뒤** 옛 것을 해제하므로 순간 2배 피크가 생긴다. `num_GS`가 안정적인데도 특정 스텝에서만 OOM이 나면 `refine_every` 경계를 확인해야 한다."
+    },
+    {
+      "id": "eb602907-9f90-4d6e-9532-0a6070d2e2ae",
+      "question": "Adam state가 메모리에 미치는 영향과 완화책은?",
+      "answer": "파라미터당 `exp_avg` + `exp_avg_sq`로 2배가 들어 3M 가우시안이면 ~2.1GB다. `--sparse_grad`(+`--packed` 필수) 또는 `--visible_adam`으로 완화한다."
+    },
+    {
+      "id": "b5bd4122-ec69-434f-a0b5-324319756e8a",
+      "question": "`packed=False`가 기본인데 왜 `--packed`가 메모리에 유리한가?",
+      "answer": "기본값은 비가시 가우시안까지 dense 텐서로 유지한다. `--packed`는 가시 가우시안만 희소 인덱스로 담아 메모리를 줄이지만 약간 느려진다."
+    },
+    {
+      "id": "7ba425ac-2ba8-46f3-b3c8-0355faa6ef0d",
+      "question": "gsplat 데이터 로딩의 가장 큰 병목 후보는 무엇인가?",
+      "answer": "`cv2.remap` 언디스토션이 **매 `__getitem__`마다** CPU에서 실행된다는 점이다. 왜곡 있는 데이터셋에서 병목이 될 수 있고, 언디스토트된 이미지를 한 번 디스크에 캐시하는 것이 개선책이다."
+    },
+    {
+      "id": "833df99d-249b-4807-bb83-0ceb0fc9fb37",
+      "question": "gsplat에서 데이터 로딩이 보통 병목이 아닌 이유와 예외 조건은?",
+      "answer": "GPU 래스터화가 지배적이라 로딩은 대개 문제가 아니다. 단 `--data_factor 1`(전해상도) + 왜곡 있는 데이터셋 조합에서는 확인할 값어치가 있다."
+    },
+    {
+      "id": "2b39e41e-4131-46a5-92a9-1b89eca82b2e",
+      "question": "`num_workers`와 관련된 gsplat의 제약은 무엇인가?",
+      "answer": "train 4 / val 1로 고정되어 Config에 노출되지 않아 변경하려면 코드 수정이 필요하다. val이 1이라 `eval_steps`가 잦으면 평가 로딩이 직렬화된다."
+    },
+    {
+      "id": "f5928e34-1789-43e8-805f-0b9547af1908",
+      "question": "`eps2d=0.3`의 의미와 낮출 때의 위험은?",
+      "answer": "투영 2D 공분산 고유값에 더하는 epsilon으로 최소 3픽셀 크기를 보장한다. 이 값을 낮추면 작은 가우시안에서 수치적으로 불안정해진다."
+    },
+    {
+      "id": "7ebd8ca4-3bc2-4772-bd80-eeed9107e184",
+      "question": "`torch.logit(init_opacity)`에서 주의할 수치 문제는?",
+      "answer": "`init_opa`가 0 또는 1에 가까우면 ±inf가 된다. 기본값 0.1(default)과 0.5(mcmc)는 안전하다."
+    },
+    {
+      "id": "3bcb3c58-ec9b-4a6e-a5eb-b058f1bf7a22",
+      "question": "gsplat에 AMP가 없다는 것의 긍정적 측면은 무엇인가?",
+      "answer": "손실 스케일링이 없으므로 fp16 gradient underflow 문제가 애초에 발생하지 않는다. 트레이드오프의 다른 면이다."
+    },
+    {
+      "id": "6e8f90b9-cb2e-442d-9e0d-c29f9d627846",
+      "question": "gsplat에 하드코딩된 주요 값들은 무엇인가?",
+      "answer": "`data_dir=\"data/360_v2/garden\"`, `result_dir=\"results/garden\"`, 시드 42(Config 필드 아님), `num_workers` 4/1, val batch_size 1, `feature_dim=32 if app_opt`, MCMC `n_max=51`이다."
+    },
+    {
+      "id": "30eea2df-f0b5-432c-a1a7-6110598ba358",
+      "question": "벤치마크 스크립트에 하드코딩된 값들은 무엇인가?",
+      "answer": "`SCENE_DIR=\"data/360_v2\"`, `SCENE_LIST=\"garden bicycle stump bonsai counter kitchen room\"`, 장면별 `DATA_FACTOR`(bonsai/counter/kitchen/room은 2, 나머지 4), `CUDA_VISIBLE_DEVICES=0`이다."
+    },
+    {
+      "id": "bd0205a3-1d69-4b74-94fc-dadc43442fb3",
+      "question": "gsplat의 재현성 리스크 중 심각도가 가장 높은 것은?",
+      "answer": "**비결정적 원자 누적**이다. 래스터화의 근본 성질이라 코드로 해결할 수 없다. 그다음이 `-use_fast_math` 기본 활성(`FAST_MATH=0` 재빌드로 배제 가능), CUDA 시드 미고정, JIT vs AOT 빌드 차이다."
+    },
+    {
+      "id": "0ea790fd-87bc-4923-8dfe-fa701376cfe6",
+      "question": "`PLAS` 의존성에 어떤 재현성 리스크가 있는가?",
+      "answer": "`[dev]` extras가 `git+https://.../PLAS.git`을 커밋 SHA 없이 참조한다. 업스트림 변경이 조용히 반영되어 압축 결과가 달라질 수 있다."
+    },
+    {
+      "id": "80629e23-ea69-4e2d-824f-e4fabce3b9c9",
+      "question": "gsplat의 재현성에서 오히려 좋은 신호로 평가되는 것은?",
+      "answer": "알려진 FP 불일치 22건을 `conftest.py`에 nodeid로 명시 관리한다는 점이다. 숨기지 않고 드러낸 것이 좋은 신호이며, `cfg.yml` 덤프와 torch 버전 정확 핀도 양호한 항목이다."
+    },
+    {
+      "id": "7f540673-df8e-45a5-b214-f9f3463f7f09",
+      "question": "gsplat을 처음 읽을 때 권장되는 파일 순서는?",
+      "answer": "① EXPLORATION.md(5분, 플래그별 실측 지표) ② `simple_trainer.py`의 `Config` dataclass ③ `Runner.train()` ④ `examples/datasets/colmap.py` ⑤ `gsplat/strategy/default.py` + `mcmc.py`다."
+    },
+    {
+      "id": "12b0022e-6723-4119-9a69-94e16436d3b1",
+      "question": "\"splat\"과 \"densification\"의 정의는 무엇인가?",
+      "answer": "splat은 화면에 투영된 하나의 3D 가우시안으로 이 프로젝트의 \"파라미터 단위\"다. densification은 학습 중 가우시안을 복제/분할/제거해 개수 N을 조정하는 gsplat 고유의 메커니즘이다."
+    },
+    {
+      "id": "4d026398-7a2d-4d20-b9db-3e3991069dbb",
+      "question": "\"opacity reset\"은 무엇이며 왜 하는가?",
+      "answer": "`reset_every=3000`마다 불투명도를 낮은 값으로 리셋한다. 불필요한 가우시안이 프루닝되도록 유도하는 장치다."
+    },
+    {
+      "id": "e16f32d3-4aca-40c8-ac3f-bee027cf65c8",
+      "question": "`sh0`와 `shN`의 역할 차이는 무엇인가?",
+      "answer": "`sh0`는 diffuse(DC) 성분으로 시점과 무관한 기본 색을, `shN`은 view-dependent 성분으로 시점에 따른 색 변화를 표현한다. `rgb_to_sh`는 `(rgb - 0.5) / 0.28209479177387814`로 변환한다."
+    }
+  ]
+}

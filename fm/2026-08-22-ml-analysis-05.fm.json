@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "6f1b8228-5edd-490a-9a2a-fa71848395de",
+      "question": "`pause_refine_after_reset`은 무엇이며 권장값은?",
+      "answer": "불투명도 리셋 후 밀도화를 일시정지할 스텝 수로 기본값은 0이다. **학습 이미지 수로 설정하는 것이 권장**된다."
+    },
+    {
+      "id": "c2cb82e6-a9bd-4062-8062-0d6335d18047",
+      "question": "`MCMCStrategy`의 `cap_max`가 중요한 이유는?",
+      "answer": "가우시안 개수 상한(기본 1,000,000)을 강제한다. `DefaultStrategy`에는 상한이 전혀 없어 무한정 증가하므로, OOM 통제 수단으로 결정적 차이를 만든다."
+    },
+    {
+      "id": "ce22b678-ca79-4724-94e7-85f771c4655e",
+      "question": "`MCMCStrategy`의 노이즈 관련 파라미터는 무엇인가?",
+      "answer": "`noise_lr=5e5`(매우 큰 값), `noise_injection_stop_iter=-1`(never), `noise_opacity_t=0.005` / `noise_opacity_k=100`(노이즈 억제 게이트의 전이점/급격도)이다."
+    },
+    {
+      "id": "904256f1-10d3-4607-9127-937412790099",
+      "question": "`MCMCStrategy.initialize_state()`가 만드는 `binoms` 테이블의 용도는?",
+      "answer": "`binoms [51, 51]` 이항계수 테이블을 미리 만들어 relocation 시 opacity/scale 보정에 쓴다(`n_max = 51`)."
+    },
+    {
+      "id": "61e406b5-c4be-46cf-bb94-d622bfcd253c",
+      "question": "`Config.adjust_steps(steps_scaler)`가 왜 중요한가?",
+      "answer": "`max_steps`뿐 아니라 밀도화 스케줄(`refine_start_iter`/`refine_stop_iter`/`reset_every`/`refine_every`)까지 함께 스케일한다. `--steps_scaler 0.25`면 `refine_every`도 100→25가 되어 상대적 밀도화 빈도가 유지된다."
+    },
+    {
+      "id": "553c01f0-0873-4115-809c-ba2e39c032b9",
+      "question": "gsplat의 분산 학습 방식은 DDP와 어떻게 다른가?",
+      "answer": "커스텀 데이터/모델 하이브리드 병렬이다. 가우시안을 `points[world_rank::world_size]` stride로 분할해 각 rank가 부분집합을 소유하고, C++ Seam A/B 통신으로 렌더를 협업한다. DDP는 부가 모듈(`pose_adjust`, `pose_perturb`, `app_module`)에만 쓴다."
+    },
+    {
+      "id": "62021a2f-c998-4480-93d3-e0707aea9ba5",
+      "question": "gsplat 분산 렌더의 Seam A와 Seam B는 각각 무엇인가?",
+      "answer": "Seam A는 카메라 all-gather, Seam B는 가우시안 all-to-all scatter다. 두 통신 지점이 rank별 부분 가우시안으로 전체 이미지를 렌더하게 해준다."
+    },
+    {
+      "id": "e5c74104-fa1b-4579-a552-27f8fd20ac89",
+      "question": "gsplat 분산 학습에서 world_size는 어떻게 결정되는가?",
+      "answer": "`CUDA_VISIBLE_DEVICES`의 GPU 수가 곧 world_size다. `gsplat/distributed.py`의 `cli()`가 이를 감지해 프로세스를 띄우고, 멀티 노드는 `OMPI_COMM_WORLD_*`(OpenMPI) 환경변수로 감지한다."
+    },
+    {
+      "id": "87d99b02-0261-4058-a146-753f948f9736",
+      "question": "gsplat 분산 학습의 주요 제약 4가지는 무엇인가?",
+      "answer": "① 카메라 수는 rank마다 동일해야 한다(강제) ② 가우시안 수는 균등할 필요 없으나 균형이 성능에 유리(권장) ③ `post_processing`은 단일 GPU만 가능(world_size>1이면 에러) ④ viewer가 자동 비활성된다."
+    },
+    {
+      "id": "1a38345d-33ca-4992-9194-e4eb2c80ddb5",
+      "question": "`distributed=True`를 단일 GPU에서 쓸 수 있는 이유와 그 활용은?",
+      "answer": "rank 1개에서 gather/scatter가 항등 연산이 되어 수치적으로 동일하면서 코드 경로는 그대로 돈다. 멀티 GPU 확보 전에 분산 로직을 로컬에서 디버깅할 수 있다."
+    },
+    {
+      "id": "a0ba4cf0-d1c8-433b-839c-7e64cf4d0f79",
+      "question": "gsplat이 FSDP/DeepSpeed를 쓰지 않는 이유는?",
+      "answer": "모델이 신경망이 아니므로 레이어 단위 샤딩·오프로딩 개념이 무의미하다. 대신 가우시안 집합을 rank별로 stride 분할하는 커스텀 병렬을 쓴다."
+    },
+    {
+      "id": "c9aaaec7-e96b-48c4-9547-b8a96da409a0",
+      "question": "gsplat 체크포인트는 언제 어디에 무엇을 저장하는가?",
+      "answer": "`save_steps=[7000, 30000]`과 항상 `max_steps-1`에 `{result_dir}/ckpts/ckpt_{step}_rank{world_rank}.pt`로 저장한다. 내용은 `step`, `scene_id`, `splats.state_dict()`(+ `pose_adjust`, `app_module`, `post_processing`)다."
+    },
+    {
+      "id": "056aba12-c957-468b-90fc-df3104b934f5",
+      "question": "gsplat에서 `--ckpt`는 무엇을 하는 플래그인가?",
+      "answer": "resume이 아니라 **평가 전용 모드**다. 체크포인트를 주면 학습을 완전히 건너뛰고 `eval()` + `render_traj()` + `run_compression()`만 실행한다."
+    },
+    {
+      "id": "b0f9b14c-40c6-4565-a4a9-37cc0715dc47",
+      "question": "gsplat이 학습 재개(resume)를 지원하지 못하는 이유는?",
+      "answer": "optimizer state / scheduler state / strategy state를 저장하지 않기 때문이다. 밀도화가 N을 바꾸므로 optimizer state 저장·복원이 단순하지 않은 것이 미구현 이유로 보인다."
+    },
+    {
+      "id": "425fa564-3986-4b93-93b5-ffbb3facfb14",
+      "question": "멀티 GPU 평가에서 rank별 체크포인트는 어떻게 합치는가?",
+      "answer": "`runner.splats[k].data = torch.cat([ckpt[\"splats\"][k] for ckpt in ckpts])`로 각 키를 rank 순서대로 concat한다."
+    },
+    {
+      "id": "6187312d-b497-4b7c-86b8-2e586c9ee606",
+      "question": "gsplat 평가 루프가 보고하는 지표는 무엇인가?",
+      "answer": "PSNR, SSIM, LPIPS(torchmetrics, `data_range=1.0`)와 함께 `ellipse_time`(이미지당 렌더 시간), `num_GS`(최종 가우시안 개수)를 보고한다. `use_color_correction_metric=True`면 `cc_psnr`/`cc_ssim`/`cc_lpips`도 낸다."
+    },
+    {
+      "id": "5fe74adf-0c7f-4586-b141-61fac653962c",
+      "question": "gsplat에 best model 선정 로직이 없다는 것의 함의는?",
+      "answer": "검증 지표로 체크포인트를 고르지 않고 정해진 스텝의 산출물을 그대로 쓰며 early stopping도 없다. per-scene 과적합이 목표라 개념이 약하지만, 30k 스텝이 항상 7k보다 나은지가 자동 검증되지 않는다."
+    },
+    {
+      "id": "98904c4f-996a-4851-86a7-f4d4cecf2bd8",
+      "question": "`render_traj`가 지원하는 카메라 궤적 모드는 무엇인가?",
+      "answer": "`interp`(기본), `ellipse`, `spiral`, `raw`다. `traj.py`의 `generate_interpolated_path`, `generate_ellipse_path_{y,z}`, `generate_spiral_path`가 경로를 만들고 mp4로 저장한다."
+    },
+    {
+      "id": "197d5748-9931-4aca-b539-27964f519054",
+      "question": "gsplat의 SH degree scheduling은 어떻게 동작하는가?",
+      "answer": "`sh_degree_to_use = min(step // 1000, sh_degree)`로 1000 스텝마다 SH 밴드를 하나씩 개방한다. coarse-to-fine 색 표현을 구현한 것이다."
+    }
+  ]
+}

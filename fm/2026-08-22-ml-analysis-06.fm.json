@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "4f9947d8-33ea-4977-a61a-3cf864a5d398",
+      "question": "한 학습 step에서 `step_pre_backward`의 역할은 무엇인가?",
+      "answer": "`loss.backward()` 전에 호출되어 `DefaultStrategy`가 `info[\"means2d\"].retain_grad()`를 부른다. 이 호출이 없으면 `means2d.grad`가 None이 되어 밀도화가 gradient를 못 보고 조용히 아무것도 하지 않는다."
+    },
+    {
+      "id": "85d2a085-3774-4795-b154-a62b3c6c7e30",
+      "question": "`step_post_backward`가 `optimizer.step()` 뒤에 호출되는 이유는?",
+      "answer": "gradient로 파라미터를 갱신한 다음 밀도화가 일어나야 하기 때문이다. 코드 주석에 \"Run post-backward steps after backward and optimizer\"라고 명시되어 있다."
+    },
+    {
+      "id": "4d9df7d7-caf7-4fec-b96d-ad96b52f1d0d",
+      "question": "`step_post_backward`에서 `DefaultStrategy`와 `MCMCStrategy`가 하는 일은 각각 무엇인가?",
+      "answer": "Default는 grad2d를 누적해 `refine_every`마다 grow(dup/split) → prune을 하고 `reset_every`마다 opacity를 리셋한다. MCMC는 relocate → add_new → inject_noise를 수행한다."
+    },
+    {
+      "id": "0071b746-8c98-4732-9c81-2a9528b1847f",
+      "question": "밀도화가 파라미터와 optimizer state를 어떻게 동기화하는가?",
+      "answer": "`_update_param_with_optimizer()`가 파라미터와 Adam state를 짝지어 재구성하고, `Scene`의 topology hook(`on_duplicate`/`on_split`/`on_remove`/`on_relocate`/`on_permute`)이 사이드카 데이터를 동기화한다."
+    },
+    {
+      "id": "3883d918-11b9-4c66-a123-e0ecd982492a",
+      "question": "gsplat forward와 backward의 실행 구조 차이는 무엇인가?",
+      "answer": "forward는 단일 융합 C++ op로 실행되지만, backward는 op 단위로 분해되어 실행된다. 이 비대칭이 프로파일링 시 눈에 띈다."
+    },
+    {
+      "id": "dd4c2b79-c02d-4f57-8a1f-0bea00ef2cb1",
+      "question": "`random_bkgd`는 학습 step에서 무엇을 하는가?",
+      "answer": "`colors += rand(1,3) * (1 - alphas)`로 렌더 결과에 랜덤 배경색을 합성한다. 기본값은 False다."
+    },
+    {
+      "id": "a47755b1-d72e-4837-8db5-1b466d74f9d8",
+      "question": "`visible_adam`이 켜졌을 때 어떤 마스크가 계산되는가?",
+      "answer": "`visibility_mask = (radii > 0).all(-1).any(0)`로 가시 가우시안을 판정하고, `optimizer.step(visibility_mask)`로 그 가우시안만 Adam 갱신한다."
+    },
+    {
+      "id": "50a51adf-acbc-4795-b433-a7cdccb88639",
+      "question": "gsplat의 프리셋(서브커맨드) 시스템은 어떻게 구현되어 있는가?",
+      "answer": "`configs = {\"default\": (...), \"mcmc\": (...)}` dict를 `tyro.extras.overridable_config_cli(configs)`에 넘긴다. 이후 `cfg.adjust_steps(cfg.steps_scaler)`와 `cli(main, cfg, verbose=True)`(분산 런처)를 호출한다."
+    },
+    {
+      "id": "165cd1e3-293e-4a2b-bb41-e12798db6868",
+      "question": "tyro가 Hydra 없이 계층 설정을 제공하는 방식은?",
+      "answer": "`Config`가 dataclass이고 `strategy` 필드가 `Union[DefaultStrategy, MCMCStrategy]`이므로 tyro가 중첩 dataclass까지 CLI 플래그로 자동 노출한다. 예: `--strategy.cap-max`, `--strategy.grow-grad2d`."
+    },
+    {
+      "id": "7cf2424a-6323-441b-89ba-8b1375075719",
+      "question": "gsplat의 주요 데이터 관련 기본 설정값은 무엇인가?",
+      "answer": "`data_type=\"colmap\"`, `data_dir=\"data/360_v2/garden\"`(하드코딩), `data_factor=4`, `test_every=8`, `normalize_world_space=True`, `patch_size=None`, `load_exposure=True`, `camera_model=\"pinhole\"`이다."
+    },
+    {
+      "id": "00db5a8c-fa21-4331-b6be-a0e00ef65e8e",
+      "question": "gsplat의 학습 관련 기본 설정값은 무엇인가?",
+      "answer": "`max_steps=30_000`, `batch_size=1`, `steps_scaler=1.0`이며 `eval_steps`/`save_steps`/`ply_steps`가 모두 `[7000, 30000]`이다."
+    },
+    {
+      "id": "6d93f761-4a1d-4e97-b75e-762c13a7ce1f",
+      "question": "gsplat의 초기화 관련 설정값은 무엇인가?",
+      "answer": "`init_type=\"sfm\"`(`random`/`lidar` 선택 가능), `init_num_pts=100_000`과 `init_extent=3.0`(random 시만), `init_opa=0.1`, `init_scale=1.0`이다."
+    },
+    {
+      "id": "ffbc0a17-1292-40c5-bd90-b1b21a0e849d",
+      "question": "gsplat의 렌더 관련 기본 설정값은 무엇인가?",
+      "answer": "`near_plane=0.01`, `far_plane=1e10`, `packed=False`(분산 시 True 권장), `antialiased=False`, `random_bkgd=False`, `with_ut`/`with_eval3d` 모두 False(3DGUT는 둘 다 True)다."
+    },
+    {
+      "id": "839c483f-c418-4fe3-aa33-ca5d07cb099a",
+      "question": "`CUDA_VISIBLE_DEVICES`가 gsplat에서 갖는 특별한 의미는?",
+      "answer": "GPU 수가 곧 world_size를 결정한다. `cli()`가 이 변수로 프로세스를 띄우므로 별도 `torchrun` 없이 분산 학습이 시작된다."
+    },
+    {
+      "id": "76b8bc0d-7764-4443-b65f-17c53b6dec70",
+      "question": "`BUILD_NO_CUDA=1`은 언제 쓰는가?",
+      "answer": "설치 시 컴파일을 생략하고 JIT 빌드로 전환한다. CUDA 커널 개발 중에 권장되는 방식이다."
+    },
+    {
+      "id": "2f212a00-e908-4aed-87bf-e02c321730e6",
+      "question": "`NUM_CHANNELS` 환경 변수는 무엇을 제어하는가?",
+      "answer": "커널을 인스턴스화할 채널 목록을 지정한다. 테스트에서는 `1,3,4,6,8,21,23,24,32,128`을 쓴다."
+    },
+    {
+      "id": "fded80e5-e8d4-432b-ab2f-43732d7b69c7",
+      "question": "`GSPLAT_ENFORCE_CONTRACTS`와 `GSPLAT_INPUT_CAPTURE_RASTERIZATION`은 각각 무엇을 하는가?",
+      "answer": "전자는 shape/dtype 계약 검증을 강제해 shape 버그를 조기에 잡는다. 후자는 `GSPLAT_INPUT_CAPTURE_DIR`과 함께 렌더 입력을 덤프해 프로파일 리플레이에 쓴다."
+    },
+    {
+      "id": "657c748f-779e-4816-b877-f1bd00f54c7d",
+      "question": "gsplat의 데이터 경로 관리에 어떤 문제가 있는가?",
+      "answer": "데이터 경로에 환경 변수를 쓰지 않고 `data_dir`이 `\"data/360_v2/garden\"` 상대 경로로 하드코딩되어 있으며, 벤치마크 스크립트도 `SCENE_DIR=\"data/360_v2\"`를 박아둔다. 데이터 위치가 다르면 매번 CLI로 넘겨야 한다."
+    },
+    {
+      "id": "63ed4af7-8831-467b-a36f-a7df41af002d",
+      "question": "gsplat이 TensorBoard에 100 스텝마다 기록하는 항목은 무엇인가?",
+      "answer": "`train/loss`, `train/l1loss`, `train/ssimloss`, `train/num_GS`(밀도화 추적의 핵심), `train/mem`(`max_memory_allocated`/GB), 활성 시 `train/depthloss`와 `train/post_processing_reg_loss`다. `tb_save_image=True`면 `train/render` 이미지도 기록한다."
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "c8324489-c3af-4a1f-a47d-b64104971b58",
+      "question": "`_wrapper.py`가 노출하는 투영(projection) 관련 op는?",
+      "answer": "`proj`, `persp_proj`, `fully_fused_projection`, `fully_fused_projection_with_ut`, `fully_fused_projection_2dgs`다."
+    },
+    {
+      "id": "c52ffa59-a3ac-474d-b744-e5a4fb59cea6",
+      "question": "`_wrapper.py`가 노출하는 타일 교차 관련 op는?",
+      "answer": "`isect_tiles`, `isect_tiles_lidar`, `isect_tiles_sparse`, `isect_offset_encode`, `build_sparse_tile_layout`이다."
+    },
+    {
+      "id": "83fdcdd9-97b9-44ed-be71-64a7456cc768",
+      "question": "`_wrapper.py`의 래스터화 op 변종들은?",
+      "answer": "`rasterize_to_pixels`와 그 변형인 `_sparse`, `_2dgs`, `_eval3d`, `_eval3d_extra`가 있다."
+    },
+    {
+      "id": "43178f29-6c15-4043-abe2-3bef3fc8b2c8",
+      "question": "v1.6.0에서 spherical harmonics op가 어떻게 분리되었는가?",
+      "answer": "`spherical_harmonics`가 `_l0`(diffuse)와 `_l1_plus`(view-dependent)로 분리되었다."
+    },
+    {
+      "id": "c7507256-2a6f-4132-9eed-db251477bbfe",
+      "question": "gsplat의 빌드 피처 술어(predicate) 함수들은 무엇인가?",
+      "answer": "`has_2dgs()`, `has_3dgs()`, `has_3dgut()`, `has_adam()`, `has_reloc()`, `has_losses()`, `has_camera_wrappers()`다. 런타임에 어떤 피처가 컴파일되었는지 조회한다."
+    },
+    {
+      "id": "224e14e6-ed92-46d9-95b0-242b6d9eacac",
+      "question": "`_wrapper.py`가 정의하는 주요 데이터 모델 타입은?",
+      "answer": "`RollingShutterType`(IntEnum), `FThetaPolynomialType`, `ExternalDistortionModelParameters`(ABC)와 그 하위인 `BivariateWindshieldModelParameters`, `RowOffsetStructuredSpinningLidarModelParametersExt`다."
+    },
+    {
+      "id": "c0050c27-660e-415a-92bb-1af9329b0a8e",
+      "question": "분산 렌더의 Seam A는 무엇인가?",
+      "answer": "카메라 all-gather 지점이다. `C`가 전역 카메라 수로 확대되어 각 rank가 로컬 가우시안을 전역 카메라에 투영한다."
+    },
+    {
+      "id": "76c6ac0a-3682-48a3-840e-c31512167c32",
+      "question": "분산 렌더의 Seam B는 무엇인가?",
+      "answer": "투영 결과를 카메라 소유 rank로 all-to-all scatter하는 지점이다. 여기서 `C`가 로컬 카메라 수로 복귀한다."
+    },
+    {
+      "id": "ec6c7543-ed9e-4562-a148-22baf9683b9a",
+      "question": "`rasterization_3dgs()`의 \"특징 조립 융합 fast-path\"는 무엇을 한 커널로 접는가?",
+      "answer": "SH 평가 + `+0.5` bias + relu + extra signal + depth 열 기록 + `cat()`들을 단일 coalesced 커널로 접는다. 조건은 unpacked + non-distributed + SH colors + 최대 direct fp32 extra signal이며, 수치적으로 per-step 경로와 동일하다."
+    },
+    {
+      "id": "35eba52d-9cd8-410f-93a9-019c41ccc2dd",
+      "question": "메타데이터가 scatter 이전에 캡처되는 이유는?",
+      "answer": "밀도화 전략이 `gaussian_id`로 인덱싱하므로 rank-local 가우시안 축 기준의 순서가 유지되어야 하기 때문이다."
+    },
+    {
+      "id": "97b5ba9d-4895-4622-96ce-33c8f5dc3e97",
+      "question": "gsplat이 `distributed=True`를 world_size로 downgrade하지 않는 이유는?",
+      "answer": "rank 1개에서 gather/scatter가 항등 연산이 되므로 단일 GPU에서도 분산 경로를 코드 경로 그대로 테스트할 수 있기 때문이다. 좋은 테스트 가능성 설계로 평가된다."
+    },
+    {
+      "id": "1b29dce6-469b-4295-b8af-3b4f1d91b342",
+      "question": "`gsplat/sensors/`의 Layer 0(`kernels/`) 구성은?",
+      "answer": "`cameras/ops.py`(5,027행)가 카메라 op의 실질 본체이고, `cuda/csrc/`에 pinhole / fisheye / ftheta 각각의 forward+backward 커널, `camera_torch.cpp`(5,631행)가 torch 바인딩을 담당한다."
+    },
+    {
+      "id": "03d24666-496d-4c0b-9784-a22a08237b27",
+      "question": "`gsplat/sensors/functional/`이 제공하는 카메라 관련 함수는?",
+      "answer": "`project_world_points_{mean,shutter}_pose`, `image_points_to_{camera,world}_rays*`, `pixel_grid_to_world_rays_shutter_pose`, `camera_rays_to_image_points`, `generate_image_points` 등이다."
+    },
+    {
+      "id": "313eb08c-6051-4bb1-b37a-b1d1b1d7e4a6",
+      "question": "`gsplat/sensors/functional/`의 LiDAR 관련 5개 함수는?",
+      "answer": "`elements_to_sensor_angles`, `generate_spinning_lidar_rays`, `inverse_project_spinning_lidar`, `sensor_angles_to_sensor_rays`, `sensor_rays_to_sensor_angles`다."
+    },
+    {
+      "id": "1b0731eb-9b8b-4f1d-9c85-6eae75978691",
+      "question": "`gsplat/sensors/models/`가 제공하는 타입은?",
+      "answer": "`CameraModel`, `LidarModel`, `ImageFrame`, `LidarFrame`, `Pose`/`DynamicPose`다."
+    },
+    {
+      "id": "52dfbe53-c533-4f69-9492-decd75bc961f",
+      "question": "`sensors` 모듈의 반환값 관례는?",
+      "answer": "튜플 언패킹 대신 `ImagePointsReturn`, `PixelsReturn`, `SensorAnglesReturn`, `SensorRayReturn`, `WorldPointsTo*Return`, `WorldRaysReturn` 같은 구조화된 명명 필드 타입을 쓴다."
+    },
+    {
+      "id": "4bbed63c-2011-412f-ad87-261950568679",
+      "question": "FTheta 카메라 모델에서 forward 다항식의 유효 구간 제약은?",
+      "answer": "`[0, max_angle]` 범위에서만 신뢰된다. FOV를 넓히려고 `max_angle`을 올리는 것은 금지이며 값은 캘리브레이션에서 와야 한다."
+    },
+    {
+      "id": "64fa490b-07f6-4c6b-be44-8ce05bed95d8",
+      "question": "FTheta로 180도 초과 밴드를 렌더하려면 무엇이 필요한가?",
+      "answer": "`global_z_order=False`가 필요하다. z-culling 대신 Euclidean culling으로 전환하기 때문이며, `gsplat/rendering.py:459` 주변 docstring에 명시되어 있다."
+    }
+  ]
+}
