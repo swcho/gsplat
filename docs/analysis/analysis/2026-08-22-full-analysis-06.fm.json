@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "b1cd42c5-5ca2-419b-84ad-ae20ca293a0f",
+      "question": "`gsplat` ↔ `gsplat.strategy` 순환이 지금 동작하는 이유는?",
+      "answer": "`__init__.py`가 `from .cuda._wrapper import (...)`를 `from .strategy import ...`보다 먼저 실행하기 때문이다. import 순서를 재정렬하면 `ImportError`가 난다."
+    },
+    {
+      "id": "c8c71477-1a44-46df-8938-9b555fae6b79",
+      "question": "`gsplat` ↔ `gsplat.strategy` 순환의 권고 해법은?",
+      "answer": "`from gsplat import quat_scale_to_covar_preci`를 `from gsplat.cuda._wrapper import quat_scale_to_covar_preci`로 바꾼다. 실제 정의 위치를 직접 가리키면 순환이 사라진다."
+    },
+    {
+      "id": "e1a9a528-89ac-4c38-9c63-bf162f0359ed",
+      "question": "`gsplat.sensors` 관련 순환 의존(2·3번)의 구조는?",
+      "answer": "`sensors/__init__.py`가 `from . import functional, models`를 실행하고, `models.cameras.camera_model` / `lidars.lidar_model`이 `from ... import functional as F`로 부분 초기화된 `gsplat.sensors`에 재진입한다."
+    },
+    {
+      "id": "ce7fd27b-a671-4330-9cd1-c4b37b845392",
+      "question": "`gsplat.sensors` 순환의 권고 해법은?",
+      "answer": "`from ... import functional as F`를 `from ...functional import ...`처럼 하위 모듈 직접 지정으로 바꾼다. 같은 파일의 `from ...functional.return_types import` 줄들이 이미 이 방식이라 일관성도 개선된다."
+    },
+    {
+      "id": "1d3d7206-e9a2-40f7-8e13-3af025961be9",
+      "question": "함수 내 지연 import는 순환 의존으로 봐야 하는가?",
+      "answer": "아니다. `rendering.py:769` 등에서 `_torch_impl`을 함수 본문에서 import하는 것은 의도적인 지연 로딩이며 모듈 레벨 순환 3건과 구분해야 한다."
+    },
+    {
+      "id": "a9f777e7-18f5-4891-b95c-fd1273e21039",
+      "question": "gsplat의 전역 상태 중 `_C`는 무엇인가?",
+      "answer": "`gsplat/cuda/_backend.py`의 모듈 레벨 싱글턴 네이티브 확장 핸들이다. import 시 prebuilt 시도 → JIT → CUDA가 없으면 `None`이 된다."
+    },
+    {
+      "id": "673eaeb4-d7a3-44dd-825d-5c4809141cf7",
+      "question": "gsplat의 지연 백엔드 캐시는 어떻게 구현되는가?",
+      "answer": "`gsplat/_lazy_backend.py`가 모듈별 `_UNSET` sentinel을 두고 첫 속성 접근 시 해소한다."
+    },
+    {
+      "id": "1ecbbe10-950b-4ef3-9db9-72b489ef8bb1",
+      "question": "NVTX 도메인 상태는 어디서 관리되는가?",
+      "answer": "`gsplat/trace.py:59`의 `_get_valid_gsplat_nvtx_domain()`이 캐시한다."
+    },
+    {
+      "id": "31233c94-ec54-4b85-96a8-b5118b5f74f1",
+      "question": "동시 JIT 빌드는 어떻게 직렬화되는가?",
+      "answer": "빌드 락으로 직렬화하며 타임아웃은 `GSPLAT_BUILD_LOCK_AGE_S` 환경변수로 제어한다."
+    },
+    {
+      "id": "39dfbc49-5702-4e62-83d9-e8b64eb367f7",
+      "question": "gsplat에서 학습 상태가 전역이 아니라는 것은 무슨 의미인가?",
+      "answer": "`splats`(ParameterDict), `strategy_state`(dict), optimizer state 모두 `Runner`/`Stage`가 소유하고 명시적으로 전달된다. 라이브러리 코어는 stateless를 유지한다."
+    },
+    {
+      "id": "f1bf0896-498a-4a87-8fbc-e1bed798b852",
+      "question": "`meta` dict가 out-of-band 채널로 불리는 이유는?",
+      "answer": "`rasterization()`이 반환하는 `meta`에 `means2d`, `radii`, `gaussian_ids`, `isect_ids`, `flatten_ids` 등 내부 텐서가 그대로 노출되고, 밀도화 전략이 이를 읽어 `means2d.retain_grad()`로 gradient를 역주입하기 때문이다."
+    },
+    {
+      "id": "b279173f-360a-4c94-9c53-518c8fce4c2c",
+      "question": "`absgrad`는 사용자에게 어떻게 전달되는가?",
+      "answer": "`meta[\"means2d\"].absgrad` 속성으로 텐서에 붙어 돌아온다. 강한 암묵 결합이라 리팩터링 시 가장 조심해야 할 지점이다."
+    },
+    {
+      "id": "ebfcbf02-7e00-43b3-925f-5728c2c5adf1",
+      "question": "학습 파라미터 공간에서 렌더 입력 공간으로의 변환은 어떻게 이루어지는가?",
+      "answer": "`scales`는 log→`exp()`, `opacities`는 logit→`sigmoid()`, `sh0`/`shN`은 `cat(dim=1)`으로 `colors [N, K, D]`가 된다. `quats`만 커널 내부에서 정규화된다."
+    },
+    {
+      "id": "b09b8a21-549b-4a4a-a723-e72d1a416aab",
+      "question": "gsplat에서 활성 함수를 커널 밖에 두는 규약과 그 예외는?",
+      "answer": "활성 함수는 트레이너 책임이다(`examples/simple_trainer.py:664` 참고). `quats`만 예외로 커널이 내부 정규화하며, 주석에 명시되어 있으나 API 비대칭이다."
+    },
+    {
+      "id": "0cba83ee-adf7-4d68-8194-b39bf75935e2",
+      "question": "C++ 내부에서 covars는 어떻게 표현되는가?",
+      "answer": "3×3 행렬을 상삼각 6D 벡터 `[0,0],[0,1],[0,2],[1,1],[1,2],[2,2]` 순서로 변환해 다룬다."
+    },
+    {
+      "id": "69f24e0f-8420-4855-9b15-1918eded96b2",
+      "question": "SH 계수에서 RGB로의 변환 과정은?",
+      "answer": "SH를 평가한 뒤 `+0.5` bias를 더하고 relu를 적용한다. 융합 커널이 이를 한 번에 수행한다."
+    },
+    {
+      "id": "004a7e53-e02a-4e92-a4f7-050a82d03107",
+      "question": "depth 채널은 출력에서 어떻게 처리되는가?",
+      "answer": "마지막 열에 append되며, `expected_depth` 모드면 alpha로 나눈다."
+    },
+    {
+      "id": "841a21cb-958b-40ec-a895-26c941d766b2",
+      "question": "gsplat의 멀티 GPU 연동 방식은?",
+      "answer": "NCCL process group을 사용하며 Seam A(카메라 all-gather)와 Seam B(가우시안 all-to-all scatter) 두 통신 지점을 갖는다."
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "6fda50a9-16c2-49a2-a623-d771ae6cf59c",
+      "question": "gsplat의 파일 출력 형식은 무엇인가?",
+      "answer": "`.ply`(`exporter.py`, `utils.save_ply`), `.pt` 체크포인트, PNG 압축(`compression/`)이다."
+    },
+    {
+      "id": "8d4fa74c-4f83-4357-ada9-d7cd2ccdbe9e",
+      "question": "gsplat이 지원하는 입력 데이터셋 파서는?",
+      "answer": "`examples/datasets/`에 COLMAP, NCore v4, EndoNeRF 파서가 있다."
+    },
+    {
+      "id": "604ceb61-30aa-4c9c-bc33-d969fef4ef4c",
+      "question": "gsplat의 입력 캡처 기능은 어떻게 동작하는가?",
+      "answer": "`GSPLAT_INPUT_CAPTURE_RASTERIZATION`을 켜면 `GSPLAT_INPUT_CAPTURE_DIR`에 입력이 덤프되고, `profile.py`가 이를 재생할 수 있다."
+    },
+    {
+      "id": "27a6cfea-0974-4c17-9cc9-23f365f08dec",
+      "question": "gsplat의 뷰어는 무엇 기반인가?",
+      "answer": "viser 기반이며 `examples/gsplat_viewer.py`에 있다."
+    },
+    {
+      "id": "922e7c72-8609-46f8-86da-13ec1ba7d9f2",
+      "question": "`BUILD_NO_CUDA` 환경변수의 역할과 권장 사용처는?",
+      "answer": "기본 `0`이며, `1`이면 pip install 시 컴파일을 생략하고 첫 실행에서 JIT 빌드한다. CUDA 코드를 개발할 때 증분 컴파일 때문에 권장된다."
+    },
+    {
+      "id": "9b05e226-cb9b-4a87-b697-968b6eecd586",
+      "question": "`DEBUG=1` 빌드 시 어떤 일이 일어나는가?",
+      "answer": "`-g -O0 -Wall -Werror`가 적용되고 `WITH_SYMBOLS`와 `BUILD_CAMERA_WRAPPERS`가 자동으로 켜진다."
+    },
+    {
+      "id": "f92a8fbc-1994-41da-8529-4e76d71d3f99",
+      "question": "`FAST_MATH` 환경변수의 기본값과 의미는?",
+      "answer": "기본 `1`이며 `-use_fast_math`를 적용한다. denormal 처리와 정확도를 희생하므로 수치 불일치 디버깅 시 `FAST_MATH=0`으로 재빌드해 영향을 배제해 본다."
+    },
+    {
+      "id": "a5bb6bc0-3d9e-4fe0-9067-f2ec602e273d",
+      "question": "`NUM_CHANNELS` 환경변수는 무엇을 제어하는가?",
+      "answer": "인스턴스화할 채널 수 목록을 지정한다. 테스트는 `1,3,4,6,8,21,23,24,32,128`을 사용한다."
+    },
+    {
+      "id": "a1c48671-ecdd-49d0-9f04-7f2910b25f40",
+      "question": "gsplat의 피처별 컴파일 아웃 플래그에는 어떤 것들이 있는가?",
+      "answer": "`BUILD_2DGS`, `BUILD_3DGS`, `BUILD_3DGUT`, `BUILD_ADAM`, `BUILD_RELOC`, `BUILD_LOSSES`, `BUILD_CAMERA_WRAPPERS`이며 런타임에는 `has_*()` 술어로 조회한다."
+    },
+    {
+      "id": "6abdd610-740e-4a6b-82cc-9af4c7588a61",
+      "question": "`CUPY_PACKAGE` 환경변수는 어떻게 결정되는가?",
+      "answer": "자동 감지되며 `_detect_cupy_requirement()`가 nvcc → cuda.h 순으로 CUDA major 버전을 추정한다."
+    },
+    {
+      "id": "78ef8a28-ac03-4b70-bd5f-d91317a078f5",
+      "question": "`GSPLAT_ENFORCE_CONTRACTS` 환경변수의 역할은?",
+      "answer": "shape/dtype 계약 검증을 강제한다. shape 에러를 더 이른 지점에서 잡을 때 유용하다."
+    },
+    {
+      "id": "6fdc4e2e-fd59-488b-ad6d-d17da3c72154",
+      "question": "`GSPLAT_MCMC_BACKEND` 환경변수는 무엇을 선택하는가?",
+      "answer": "MCMC perturb 백엔드를 native CUDA와 PyTorch 중에서 선택한다."
+    },
+    {
+      "id": "d2808d4e-b028-4b0d-bb4b-011534af3ac4",
+      "question": "`GPU_CI_XFAIL` 환경변수의 역할은?",
+      "answer": "`1`이면 `conftest.py`에 열거된 알려진 FP 불일치 22건을 xfail 처리한다."
+    },
+    {
+      "id": "d8f781af-53ba-457a-a690-119187f26561",
+      "question": "`setup.py`가 만드는 두 개의 CUDAExtension은?",
+      "answer": "`gsplat.csrc`(파라미터를 `cuda/build.py:get_build_parameters()`에서 수령)와 `gsplat.experimental.render.kernels.csrc`(`experimental/render/kernels/cuda/build.py`에서 수령, `BUILD_EXPERIMENTAL=1`일 때)다."
+    },
+    {
+      "id": "0bc66099-16ec-46a7-858c-0897dd2e8d15",
+      "question": "gsplat의 extras 구성은?",
+      "answer": "`[lidar]`(scipy), `[examples]`(Pillow/tqdm/tyro/imageio), `[dev]`(포맷터·pytest·cupy·nerfacc·PLAS·torchpq)다."
+    },
+    {
+      "id": "2249b3e8-e4c4-4386-bdfe-7cfc075db460",
+      "question": "`get_extras_require()`가 리터럴이 아닌 함수인 이유는?",
+      "answer": "`docker/check_deps.sh`가 `import setup`으로 의존성을 읽을 수 있게 하기 위해서다."
+    },
+    {
+      "id": "e37e0efc-5ce7-40b1-b682-9733f1dd3e2f",
+      "question": "gsplat을 클론할 때 `--recurse-submodules`가 필요한 이유는?",
+      "answer": "glm과 googletest 서브모듈이 빌드와 C++ 테스트에 필수이기 때문이다."
+    },
+    {
+      "id": "db5f64d7-8c92-44cf-92a3-4b5cfd59282f",
+      "question": "CUDA 코드를 수정할 개발자에게 권장되는 설치 명령은?",
+      "answer": "`BUILD_NO_CUDA=1 pip install -e \".[dev]\"`다. JIT 증분 컴파일을 사용해 커널 반복 수정이 빨라진다."
+    }
+  ]
+}

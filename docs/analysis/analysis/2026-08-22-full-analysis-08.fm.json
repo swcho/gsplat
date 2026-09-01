@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "4de069fb-10c1-4a09-adab-45391be98b34",
+      "question": "gsplat의 pre-commit 포맷 훅은 어떻게 설치하는가?",
+      "answer": "`./bootstrap.sh`를 실행하며, 검증은 `lint/format-code.sh --check`(black + isort + clang-format)로 한다."
+    },
+    {
+      "id": "8efd515e-620c-4df3-871d-30d677160ab7",
+      "question": "JIT 빌드 산출물은 어디에 남는가?",
+      "answer": "`~/.cache/torch_extensions/py*-cu*/`에 남는다. 커널을 수정했는데 반영이 안 되면 여기를 확인한다."
+    },
+    {
+      "id": "192240cd-ff2a-4e4a-9ab0-6a9bc9fb483a",
+      "question": "gsplat에서 clangd(IDE) 셋업에 필요한 것은?",
+      "answer": "`.clangd_template`과 `bear` 조합이 필요하며, `docs/DEV.md`에 3단계로 정리되어 있다."
+    },
+    {
+      "id": "87c45b25-3e22-40e9-bff7-9d3d24ec5eb1",
+      "question": "`core_tests.yml` CI 워크플로는 무엇을 수행하는가?",
+      "answer": "Python 3.10에서 `lint/format-code.sh --check --full`과 `pytest tests/`를 GPU 없이 실행한다."
+    },
+    {
+      "id": "509eaece-f388-4e46-b247-36d1c295a47b",
+      "question": "`gpu_tests.yml` CI 워크플로의 특징적인 단계는?",
+      "answer": "실제 GPU 러너에서 `nvidia-smi` 확인 → 테스트 → wheel 빌드 → wheel 설치 후 재테스트를 한다. 설치 후 재테스트가 package_data 누락 같은 패키징 회귀를 잡는다."
+    },
+    {
+      "id": "7180649e-d4fc-4d4d-a54b-907be8b7698a",
+      "question": "gsplat의 CI 워크플로 목록은?",
+      "answer": "`core_tests.yml`, `gpu_tests.yml`, `doc.yml`(Sphinx), `building.yml`(사전 컴파일 wheel 매트릭스), `publish.yml`(PyPI), `generate_simple_index_pages.yml`(whl 인덱스)이다."
+    },
+    {
+      "id": "5ea1e2c0-b162-4a24-8942-2b8969460b3d",
+      "question": "GPU 테스트가 PR에서 자동 실행되지 않는 이유와 그 결과는?",
+      "answer": "GitHub 러너에 GPU가 없기 때문이다. `core_tests.yml`은 CUDA 없이 도는 테스트만 통과시키므로 커널 수정은 로컬 GPU 검증이 필수다."
+    },
+    {
+      "id": "06f64380-fd7c-4d6b-9fc1-0ecde45b3810",
+      "question": "gsplat에서 배울 만한 패턴으로 꼽힌 \"빌드 파라미터의 단일 소스\"란?",
+      "answer": "JIT와 AOT가 `cuda/build.py`를 공유하고 `setup.py`가 순환을 피해 그것을 직접 로드하는 구조다. 나아가 `_setup_py_build_parameters_mismatch_reason()`이 불일치 이유를 사람이 읽을 수 있게 설명한다."
+    },
+    {
+      "id": "ae6743ac-36c1-4227-8e75-749401e5089a",
+      "question": "gsplat이 부분 빌드를 일급으로 다루는 방식은?",
+      "answer": "`BUILD_2DGS`/`BUILD_3DGUT` 등으로 피처를 컴파일 아웃할 수 있고, `_has_schema()`가 런타임에 op 존재를 확인해 `has_3dgut()` 같은 술어로 노출한다. 부분 빌드에서 import가 깨지지 않는다."
+    },
+    {
+      "id": "49769fce-f0be-4c01-89df-3f08066bfb00",
+      "question": "`make_lazy_backend()`의 docstring이 경고하는 함정은?",
+      "answer": "`public_name`을 모듈 글로벌로도 할당하면 `__getattr__`을 가려 지연 로딩이 깨진다는 점이다."
+    },
+    {
+      "id": "115360e4-d9f1-4a4f-9fb3-5cca9a128df2",
+      "question": "gsplat의 \"왜를 남기는 주석 문화\" 사례는?",
+      "answer": "`_detect_cupy_requirement()`가 nvcc 파싱 실패 시 `warnings.warn`으로 \"깨진 ccache shim 가능성\"을 남기고, `get_extras_require()`가 함수인 이유와 `package_data`가 열거 대신 glob인 이유가 인라인에 적혀 있다."
+    },
+    {
+      "id": "135b245f-36f1-4cb7-8f07-41abdcfa0b86",
+      "question": "gsplat이 알려진 테스트 실패를 관리하는 방식은?",
+      "answer": "`conftest.py`가 GPU CI의 marginal FP 불일치 22개를 nodeid로 열거하고 `GPU_CI_XFAIL=1`에서만 xfail한다. 테스트를 삭제하거나 tolerance를 느슨하게 푸는 대신 목록으로 가시화했다."
+    },
+    {
+      "id": "8774a724-cb59-4fe3-91fb-414ccd3fbb5a",
+      "question": "`rasterization()`의 47개 인자가 문제로 지적되는 이유는?",
+      "answer": "3DGS / 3DGUT / LiDAR / eval3d / sparse / distributed / 5종 distortion / rolling shutter가 하나의 시그니처에 겹쳐 있어 유효 조합이 인자 이름으로 표현되지 않고, 상호 제약 검사가 여러 함수에 흩어진다."
+    },
+    {
+      "id": "92cd8a34-7ec3-44b9-b49e-80e25df5a309",
+      "question": "`rasterization()` 인자 폭발에 대한 개선 제안은?",
+      "answer": "이미 존재하는 `RendererConfig`를 확장해 distortion/shutter/센서 파라미터를 config 객체로 묶고, 위치 인자는 geometry + 카메라만 남긴다. 기존 시그니처는 얇은 shim으로 유지한다."
+    },
+    {
+      "id": "afed74fe-17fc-4d24-bcf2-83a8f0c26304",
+      "question": "`gsplat/cuda`를 규약으로 이관하자는 제안의 구체적 방법은?",
+      "answer": "점진적 이관으로 `_wrapper.py` 3,216행을 도메인별(`kernels/projection_ops.py`, `kernels/rasterize_ops.py`, `kernels/sh_ops.py`)로 분할하고 `functional/`에 공개 계약을 둔다. `_wrapper.py`는 재수출 shim으로 남겨 하위 호환을 유지한다."
+    },
+    {
+      "id": "2ebd3386-8af5-43c1-adc0-90e29215cec9",
+      "question": "`meta` dict 개선 제안은 무엇인가?",
+      "answer": "`RenderMeta` TypedDict 또는 dataclass로 승격하고, 필드마다 \"어느 축 기준인지\"를 타입 레벨에 문서화하는 것이다."
+    },
+    {
+      "id": "40fb9ba8-42bf-4f68-9278-f9bad9b283fc",
+      "question": "활성 함수 규약 비대칭에 대한 개선 제안은?",
+      "answer": "`quats`만 커널이 내부 정규화하는 대신 `normalize_quats: bool = True` 같은 명시적 인자로 노출해 예측 가능성을 높이는 것이다."
+    },
+    {
+      "id": "8fab4f63-779a-41fd-aac1-4e5b160bcff8",
+      "question": "`profile.py`의 응집도 문제는?",
+      "answer": "1,657행에 워크로드 정의, 입력 캡처, 리플레이 프리셋(3DGS·3DGUT·2DGS), 손실 프리셋, CLI가 모두 들어 있다. `profile/` 패키지로 분할할 여지가 있다."
+    }
+  ]
+}

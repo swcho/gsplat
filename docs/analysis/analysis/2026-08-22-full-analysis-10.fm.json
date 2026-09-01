@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "5f5d4112-b0ba-4d84-bc6d-b303c4c7ed3f",
+      "question": "eval3d란 무엇인가?",
+      "answer": "2D 화면 공간 대신 3D 월드 공간에서 가우시안 응답을 평가하는 방식이다. `with_eval3d=True`로 활성화한다."
+    },
+    {
+      "id": "64f44d2f-de18-453a-a6b9-ab107cf0cef4",
+      "question": "UT(Unscented Transform)는 gsplat에서 어떤 역할을 하는가?",
+      "answer": "비선형 카메라 모델을 통과하는 가우시안 전파를 시그마 포인트로 근사한다."
+    },
+    {
+      "id": "3b75da8a-2b90-4ba6-967d-6c7b260d9b4c",
+      "question": "gsplat의 `packed` 레이아웃이란?",
+      "answer": "가시 가우시안만 희소 인덱스(`nnz`)로 담는 메모리 절약 레이아웃이다. 기본값은 `True`다."
+    },
+    {
+      "id": "ac70f54b-bd6a-482c-9ded-0215c25b9e07",
+      "question": "isect(intersection)와 관련된 텐서들은?",
+      "answer": "가우시안-타일 교차를 뜻하며 `isect_ids`(정렬키), `flatten_ids`, `isect_offsets`(타일별 시작 오프셋)로 표현된다."
+    },
+    {
+      "id": "bd5f902c-597f-40bf-82a0-6ec6992ef5d1",
+      "question": "gsplat에서 tile의 기본 크기는?",
+      "answer": "래스터화 작업 분할 단위로 기본 16×16 픽셀이다."
+    },
+    {
+      "id": "99d03865-86e3-4b91-91a4-54ff62efabb9",
+      "question": "AccuTile이란 무엇인가?",
+      "answer": "보수적 타원 기반 타일-가우시안 교차 테스트다. 느슨한 bounding box보다 타이트한 작업 스케줄링을 가능하게 한다."
+    },
+    {
+      "id": "2ccc5cc1-fd72-4c84-a515-3ed1eca569dd",
+      "question": "macro-tile은 어디에 쓰이는가?",
+      "answer": "HiGS 추론 경로(`experimental`)의 상위 타일 계층이다."
+    },
+    {
+      "id": "e28f1b49-1c96-4717-bf81-10f5334eb738",
+      "question": "densification(밀도화)이란?",
+      "answer": "학습 중 가우시안을 늘리거나(duplicate/split) 줄이는(prune) 과정이다."
+    },
+    {
+      "id": "67e0d3fb-a054-45bf-96a9-17af808042e7",
+      "question": "absgrad란 무엇이고 왜 유용한가?",
+      "answer": "2D 평균 gradient의 절댓값이다. 프루닝 기준으로 쓰면 메모리 절감과 품질 향상을 동시에 얻는다(arXiv:2404.10484)."
+    },
+    {
+      "id": "4ab3dd5c-7a9d-4069-ba0f-d7c98e1f9e18",
+      "question": "antialiased 래스터 모드는 무엇을 하는가?",
+      "answer": "투영 공분산에 저역통과 필터를 적용하고 opacity를 그에 맞춰 스케일한다(mip-splatting). 이때 opacity에 곱하는 보정 계수를 compensation이라 한다."
+    },
+    {
+      "id": "5f286dc8-7063-4504-8031-a16498c72c44",
+      "question": "`eps2d`의 의미와 대표값은?",
+      "answer": "투영된 2D 공분산 고유값에 더하는 epsilon이다. `0.3`이면 최소 3픽셀 크기를 보장한다."
+    },
+    {
+      "id": "dcc20597-628e-49f8-be96-04f844e1d25a",
+      "question": "SH에서 `sh0`와 `shN`의 차이는?",
+      "answer": "`sh0`는 diffuse(DC) 성분이고 `shN`은 view-dependent 성분이다. 시점 의존 색을 구면조화 계수로 표현한다."
+    },
+    {
+      "id": "cde2d3fc-1a57-4638-9c10-671537298e5c",
+      "question": "rolling shutter는 gsplat에서 어떻게 표현되는가?",
+      "answer": "행마다 노출 시각이 다른 센서를 `viewmats`와 `viewmats_rs` 두 포즈로 표현한다."
+    },
+    {
+      "id": "373f596e-cf00-4709-bb00-7778c5f96083",
+      "question": "eval3d extra signals란?",
+      "answer": "RGB/depth 외의 임의 채널이다. 출력에서 `meta[\"render_extra_signals\"]`로 분리되어 나온다."
+    },
+    {
+      "id": "84b56ed2-d04a-4141-b15a-ffb45a3781dd",
+      "question": "`global_z_order`의 True/False 차이는?",
+      "answer": "`True`는 카메라 공간 z로 정렬/컬링하고, `False`는 Euclidean 거리를 쓴다. FTheta의 180도 초과 렌더에는 `False`가 필수다."
+    },
+    {
+      "id": "e7eb28fa-006b-4d20-9849-a73a0a3f1b57",
+      "question": "PPISP란 무엇인가?",
+      "answer": "NVIDIA Per-Pixel ISP다. bilateral grid 대신 학습 뷰 보정에 쓰는 후처리 기법이다."
+    },
+    {
+      "id": "d7c1f272-74a6-420f-b51c-97291db904cf",
+      "question": "HiGS는 무엇의 약자이며 어떤 경로인가?",
+      "answer": "Hierarchically Tiled Gaussian Splatting이다. `experimental`의 추론 전용 fp16 경로다."
+    },
+    {
+      "id": "7a250b16-653e-4aef-8371-c63fd074f3c5",
+      "question": "G-SHARP는 무엇인가?",
+      "answer": "`gsplat/contrib/dynamic`에 있는 동적(수술) 씬 재구성 기능이다."
+    }
+  ]
+}

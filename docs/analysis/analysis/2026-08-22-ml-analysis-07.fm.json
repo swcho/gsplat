@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "3dc33138-de98-4dfb-a42a-381c81d127a1",
+      "question": "gsplat 실행이 남기는 결과 산출물은 무엇인가?",
+      "answer": "`cfg.yml`(실행 설정 전체 yaml 덤프), `stats/train_step*.json`(mem, ellipse_time, num_GS), `stats/{stage}_step*.json`(평가 지표), `renders/*.png`/`*.mp4`, `ply/point_cloud_{step}.ply`다."
+    },
+    {
+      "id": "e5515053-a959-487e-ab73-9debb7bd812f",
+      "question": "viser 실시간 뷰어의 동작과 장점은 무엇인가?",
+      "answer": "학습 중 브라우저(`localhost:8080`)에서 현재 장면을 인터랙티브하게 렌더한다. `viewer.lock`으로 학습 스텝과 렌더 요청을 직렬화하며 `num_train_rays_per_sec`를 표시한다. 3D 재구성 디버깅에서 TensorBoard 스칼라보다 압도적으로 유용하다."
+    },
+    {
+      "id": "59949dc4-3814-4748-bd74-deff58fdadfd",
+      "question": "gsplat의 `set_random_seed`는 무엇을 고정하고 무엇을 빠뜨리는가?",
+      "answer": "`random`, `np.random`, `torch.manual_seed`는 고정하지만 `torch.cuda.manual_seed_all`을 호출하지 않는다. `cudnn.deterministic`, `use_deterministic_algorithms`, DataLoader `worker_init_fn`/`generator`도 미설정이다."
+    },
+    {
+      "id": "1bca9cd6-e690-4d38-ba40-d2a343825174",
+      "question": "gsplat의 시드 값은 어떻게 정해지며 어떤 한계가 있는가?",
+      "answer": "`Runner.__init__`에서 `set_random_seed(42 + local_rank)`로 42가 하드코딩되어 있고 `seed`가 Config 필드가 아니다. 따라서 시드 스윕(같은 설정 3회 반복으로 분산 측정)이 코드 수정 없이 불가능하다."
+    },
+    {
+      "id": "0d6a501b-02e4-4e4e-8343-7b3ef7ac97fe",
+      "question": "`dynamic_surgical_trainer.py`가 시드 처리에서 더 나은 점은?",
+      "answer": "`seed: int = 42`를 Config 필드로 노출하고 `torch.cuda.manual_seed_all`까지 호출한다. `simple_trainer.py`가 이를 따르지 않는 것은 일관성 문제다."
+    },
+    {
+      "id": "162bc8b2-af9b-47c1-a995-d46774996c45",
+      "question": "gsplat에서 비트 단위 재현이 근본적으로 불가능한 이유는?",
+      "answer": "알파 블렌딩 래스터화가 원자적 부동소수점 누적을 쓰고 타일 내 스레드 실행 순서가 비결정적이다. `-use_fast_math`(기본 on)도 정확도를 희생하며, `conftest.py`가 GPU CI의 \"marginal FP mismatch\" 22건을 xfail로 관리하는 것이 그 증거다."
+    },
+    {
+      "id": "0994cc0e-59e8-4211-99ed-f127c2b9c4b5",
+      "question": "gsplat 단일 GPU 학습의 표준 실행 명령은?",
+      "answer": "`CUDA_VISIBLE_DEVICES=0 python examples/simple_trainer.py default --data_dir data/360_v2/garden --data_factor 4 --result_dir results/garden --disable_viewer`다. README는 `python -m examples.simple_trainer default` 모듈 형태를 권장한다."
+    },
+    {
+      "id": "a6dd9648-e6f6-4136-8cce-16a02062a3a8",
+      "question": "4 GPU 학습 시 왜 `--steps_scaler 0.25`를 주는가?",
+      "answer": "실효 배치가 4배가 되므로 스텝을 1/4로 줄인다. `adjust_steps()`가 밀도화 스케줄까지 함께 스케일해주며, `--packed`로 rank 간 전송량도 줄이는 것이 권장된다."
+    },
+    {
+      "id": "39a8154f-5e90-4e4e-89ac-3b229b4590cc",
+      "question": "gsplat 멀티 노드 학습은 어떻게 실행하는가?",
+      "answer": "`mpirun -np 8 -H host1:4,host2:4 python examples/simple_trainer.py default ...` 형태로 OpenMPI를 쓴다. `OMPI_COMM_WORLD_{RANK,SIZE,LOCAL_RANK}` 환경변수를 자동 감지한다."
+    },
+    {
+      "id": "4d527c45-2207-454e-903c-226a6792b975",
+      "question": "gsplat의 재현용 벤치마크 스크립트에는 어떤 것들이 있는가?",
+      "answer": "`examples/benchmarks/`의 `basic.sh`(DefaultStrategy), `mcmc.sh`(cap_max=1M), `basic_4gpus.sh`(4 GPU), `basic_2dgs.sh`(2DGS) 등이 7개 장면을 일괄 처리한다."
+    },
+    {
+      "id": "6935cbf4-7e45-4641-ba39-91e4e9a12633",
+      "question": "학습된 gsplat 결과를 뷰어로 보는 명령은?",
+      "answer": "`python examples/simple_viewer.py --ckpt results/garden/ckpts/ckpt_29999_rank0.pt`다. `--use_gaussian_render_inference_scene`으로 HiGS 경로를, `simple_viewer_3dgut.py`/`simple_viewer_2dgs.py`로 변형 경로를 쓸 수 있다."
+    },
+    {
+      "id": "7eee2420-93b5-4327-b411-2eb5416b9368",
+      "question": "gsplat 라이브러리를 추론용으로 직접 쓰는 경로는 무엇인가?",
+      "answer": "`from gsplat.experimental import render_scene, GaussianInferenceScene` 후 `GaussianInferenceScene.from_gaussian_scene(gaussian_scene)`으로 씬을 만들고 `render_scene(scene, camera=...)`을 호출한다."
+    },
+    {
+      "id": "3fa8950e-0b13-4e9c-a2c7-66737f75e38b",
+      "question": "EXPLORATION.md의 Garden 7k 기준선에서 AbsGS 조합의 효과는?",
+      "answer": "기본 대비 메모리가 7.54GB → **3.80GB**로 절반이 되고 학습 시간 7m07s → 5m50s, PSNR 26.29 → 26.44, SSIM 0.8332 → 0.8365로 지표도 개선된다. 가우시안 수는 4.46M → 2.17M이다."
+    },
+    {
+      "id": "9192831c-ab30-447b-bb7d-c5cdddf37698",
+      "question": "`--antialiased`의 지표 트레이드오프는 무엇인가?",
+      "answer": "Garden 7k에서 PSNR 26.29 → 26.13, SSIM 0.8332 → 0.8265로 in-distribution 지표가 약간 나빠진다. 그러나 학습 분포 밖 시점의 시각 품질을 개선한다고 문서가 밝힌다."
+    },
+    {
+      "id": "eae23a47-17da-4eaf-9a77-fc825a4a4718",
+      "question": "gsplat 코드 품질에서 가장 훔쳐올 만한 패턴은 무엇인가?",
+      "answer": "모든 주요 CUDA 커널이 `cuda/_torch_impl*.py`에 순수 PyTorch 쌍둥이를 갖는 참조 구현 쌍이다. 1,322개 테스트가 \"커널 == 참조 구현\" 수치 비교로 성립하며, 커스텀 커널을 쓰는 프로젝트라면 필수 패턴이다."
+    },
+    {
+      "id": "e510d816-d16c-4702-b19e-98e470a12cb9",
+      "question": "`check_sanity()`가 강제하는 밀도화 계약은 무엇이며 왜 필요한가?",
+      "answer": "\"학습 가능 파라미터 집합 == optimizer 키 집합\"과 \"optimizer마다 param_group 정확히 1개\"를 학습 시작 전에 검증한다. 밀도화가 파라미터와 optimizer state를 짝지어 재구성해야 하므로 이 불변식이 깨지면 무성(silent) 버그가 된다."
+    },
+    {
+      "id": "dcb55068-5650-41a6-9fcf-8a1c524366ea",
+      "question": "gsplat이 명시적으로 거부하는 비호환 조합 3가지는?",
+      "answer": "`num_cameras > 1 && batch_size != 1`, `post_processing && world_size > 1`, `ppisp && batch_size != 1` 모두 ValueError를 낸다. 조용히 잘못된 결과를 내는 대신 실패하는 설계다."
+    },
+    {
+      "id": "bdc300a0-ea6b-4000-8a49-28a0da90b0ca",
+      "question": "gsplat에서 우선순위가 가장 높은 개선 사항 3가지는?",
+      "answer": "① 학습 재개(resume) 구현 ② `seed`를 Config 필드로 노출하고 `torch.cuda.manual_seed_all` 호출 ③ `betas` 계산의 BS 상한 처리(`BS ≥ 10`에서 `betas[0] ≤ 0`이 되는 버그 위험)다."
+    },
+    {
+      "id": "5c4617d8-a8d2-4c45-90bb-c8f61f6d0f6c",
+      "question": "resume 구현이 완전히 불가능하지 않은 이유는?",
+      "answer": "밀도화가 N을 바꿔 optimizer state 저장·복원이 복잡하지만, `_update_param_with_optimizer`가 이미 파라미터-state 짝맞춤 로직을 갖고 있어 재활용 가능하다."
+    }
+  ]
+}

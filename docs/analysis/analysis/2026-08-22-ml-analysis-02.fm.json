@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "b9e35f10-3385-4340-b228-7b3f18f43404",
+      "question": "gsplat의 학습 대상 파라미터 6종과 그 shape은 무엇인가?",
+      "answer": "`means [N,3]`, `scales [N,3]`, `quats [N,4]`, `opacities [N]`, `sh0 [N,1,3]`, `shN [N,K-1,3]`이다. `K = (sh_degree+1)² = 16`이 기본이다."
+    },
+    {
+      "id": "284f0fee-dc3f-4fb4-bdfb-34bc75abb4eb",
+      "question": "gsplat 각 파라미터에 적용되는 활성 함수는 무엇인가?",
+      "answer": "`scales`는 `exp()`, `opacities`는 `sigmoid()`, `sh0`/`shN`은 SH 평가 후 `+0.5`와 relu를 거친다. `means`는 활성 함수가 없고 `quats`는 커널 내부에서 정규화된다."
+    },
+    {
+      "id": "764d0d03-7004-4600-86c6-395d1c7c910d",
+      "question": "gsplat 파라미터의 기본 학습률은 각각 얼마인가?",
+      "answer": "`means` `1.6e-4 × scene_scale`, `scales` `5e-3`, `quats` `1e-3`, `opacities` `5e-2`, `sh0` `2.5e-3`, `shN` `2.5e-3/20 = 1.25e-4`다."
+    },
+    {
+      "id": "b57ede90-2a19-49a7-a534-9725c903c53b",
+      "question": "gsplat의 `scales` 초기화는 어떻게 이루어지는가?",
+      "answer": "`log(dist_avg × init_scale)`로 초기화하며, `dist_avg`는 3-NN 평균 거리다. 즉 `knn(points, 4)[:, 1:]`로 이웃 3개 거리를 평균한 값을 쓴다."
+    },
+    {
+      "id": "ab8eedb0-3d28-4efe-9698-761431065cec",
+      "question": "가우시안 하나가 갖는 float 개수는 몇 개인가?",
+      "answer": "3(means) + 3(scales) + 4(quats) + 1(opacity) + 16×3(SH) = **59개**다. sh_degree=3 기준이다."
+    },
+    {
+      "id": "48eb865a-0b04-45de-9082-aeb710e188c6",
+      "question": "garden 장면 학습 전후의 가우시안 개수와 파라미터 규모는?",
+      "answer": "초기 N ≈ 140K(SfM)에서 학습 후 N ≈ 2~4.5M(DefaultStrategy) 또는 정확히 1M(MCMC `cap_max`)이 된다. 3M 가우시안이면 약 177M 파라미터로 fp32 ~708MB, Adam state 포함 시 ~2.1GB다."
+    },
+    {
+      "id": "45fefbff-63bd-41fb-b844-237fcfa53942",
+      "question": "gsplat의 `quats` 초기화에 어떤 수학적 문제가 있는가?",
+      "answer": "`torch.rand((N,4))`는 `[0,1)` 균등이라 균등 회전 분포가 아니라 4차원 양의 사분면에 치우친 분포다. 실전 문제는 관측되지 않았지만 `F.normalize(torch.randn(...))`가 수학적으로 올바르다."
+    },
+    {
+      "id": "7cea4084-9f85-4350-8d9a-7442ce5c3ced",
+      "question": "`rasterize_splats()`가 학습 파라미터를 렌더 입력으로 변환하는 과정은?",
+      "answer": "`scales`에 `exp()`, `opacities`에 `sigmoid()`를 적용하고 `sh0`과 `shN`을 `cat(1)`으로 합쳐 `colors [N,16,3]`을 만든다. `camtoworld`는 `inverse`로 `viewmats`가 된다."
+    },
+    {
+      "id": "e720c80d-af60-4884-bd04-23c897a67e60",
+      "question": "gsplat C++ 내부 파이프라인의 3단 구조는 무엇인가?",
+      "answer": "projection(3D → 2D 투영) → intersection(타일 교차 + radix sort) → rasterization(알파 블렌딩)이다. backbone/neck/head 개념이 없고 \"레이어\"가 아니라 \"렌더 스테이지\"다."
+    },
+    {
+      "id": "aacc3bca-c2b9-437e-b7f8-b019fa266088",
+      "question": "gsplat에서 공분산은 어떻게 구성되는가?",
+      "answer": "`quat_scale_to_covar_preci`가 $\\Sigma = R S S^T R^T$를 계산하고 대칭성을 이용해 상삼각 6D `[N,6]`로 저장한다."
+    },
+    {
+      "id": "7c71d63d-841c-4b3b-a695-710346d42fd7",
+      "question": "gsplat 투영 단계에서 수행하는 정규화와 컬링은 무엇인가?",
+      "answer": "EWA splatting 또는 UT(3DGUT)로 투영하며 `eps2d=0.3`을 공분산 고유값에 더한다. near/far plane과 `radius_clip` 기준으로 컬링한다."
+    },
+    {
+      "id": "2a18526a-8acf-4e22-b95e-72113d91830b",
+      "question": "gsplat의 타일 교차 단계는 어떤 단계로 구성되는가?",
+      "answer": "AccuTile 타원 테스트로 가우시안-타일 교차를 판정하고, depth를 키로 radix sort한 뒤 `isect_offset_encode`로 타일별 오프셋을 만든다. 타일 격자는 `Ht=⌈H/16⌉, Wt=⌈W/16⌉`이다."
+    },
+    {
+      "id": "87dd16f5-8dd6-4588-8d50-d5bdc9abbb1c",
+      "question": "gsplat의 알파 블렌딩 래스터화는 어떻게 동작하는가?",
+      "answer": "타일당 16×16 스레드가 front-to-back으로 순회하며 `T *= (1-α)`로 투과율을 누적한다. 채널은 `channel_chunk=32` 단위로 청크 처리한다."
+    },
+    {
+      "id": "c4e86307-47e1-4002-9b00-dc91c0f37dde",
+      "question": "gsplat CUDA 커널의 규모와 그 중요성은?",
+      "answer": "약 56K LOC로 이 프로젝트의 실질적 본체다. projection, intersection, rasterization, SH, camera models, query ops, optimizer, MCMC, relocation, losses, geometry, HiGS inference 등 12개 커널 그룹으로 나뉜다."
+    },
+    {
+      "id": "db9ceea5-1582-47ef-8865-9f090c63eb55",
+      "question": "gsplat v1.6.0에서 SH 커널에 어떤 변화가 있었나?",
+      "answer": "L0(diffuse)와 L1+(view-dependent)를 분리하고 fp16을 지원한다. `SphericalHarmonicsL1PlusCUDA.cu`, `SphericalHarmonicsViewDirectionCUDA.cu` 등이 추가되었다."
+    },
+    {
+      "id": "7914fa50-e756-4d5e-abba-35e58aaa0b2e",
+      "question": "gsplat이 지원하는 카메라 모델은 무엇인가?",
+      "answer": "pinhole, ortho, fisheye, ftheta를 지원하고 OpenCV 왜곡과 윈드실드 왜곡도 처리한다. `sensors/kernels/cuda/csrc/`에 13K LOC가 있다."
+    },
+    {
+      "id": "2ba86d02-be69-41c6-8a77-2458af4c94a7",
+      "question": "gsplat 커널 검증의 핵심 패턴은 무엇인가?",
+      "answer": "모든 주요 커널이 `gsplat/cuda/_torch_impl*.py`에 순수 PyTorch 쌍둥이를 가진다. 1,322개 테스트가 \"커널 == 참조 구현\" 수치 비교로 성립하며, 새 커널 디버깅의 첫 번째 도구다."
+    },
+    {
+      "id": "6efb0a7d-ef4c-4995-b249-d028c7fe27ce",
+      "question": "`CameraOptModule`의 구조와 역할은 무엇인가?",
+      "answer": "카메라 포즈를 정제한다. `nn.Embedding(n_images, 9)`를 dx[3] + drot[6]으로 나누고, 6D 회전 표현(Zhou et al.)을 `rotation_6d_to_matrix`로 변환해 `camtoworld_new = camtoworld @ [[R, dx], [0,1]]`을 만든다."
+    },
+    {
+      "id": "bd0a26b6-4712-44a5-ab06-eec1bdaa0a6d",
+      "question": "`CameraOptModule`의 초기화와 파라미터 규모는?",
+      "answer": "`zero_init()`으로 항등 변환에서 시작한다. 파라미터는 `9 × n_images`로, garden 장면 161장이면 1,449개다."
+    },
+    {
+      "id": "b5e0b26d-51db-43fd-9ffc-68d674f98d93",
+      "question": "`AppearanceOptModule`의 forward 구조는 어떻게 되는가?",
+      "answer": "이미지별 임베딩 `[C,16]`, 학습 features `[C,N,32]`, SH bases `[C,N,16]`을 concat해 `[C,N,64]`를 만들고, Linear(64→64) ReLU ×2 후 Linear(64→3)을 통과시켜 `sigmoid(mlp_out + colors)`를 낸다."
+    }
+  ]
+}

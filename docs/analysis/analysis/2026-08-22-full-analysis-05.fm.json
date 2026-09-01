@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "918707bd-54a5-4cb7-9c08-1e3341624f2f",
+      "question": "`gsplat/strategy/`의 `Strategy` 기반 클래스가 강제하는 계약은?",
+      "answer": "`check_sanity`, `step_pre_backward`, `step_post_backward`다. `check_sanity`는 \"학습 가능 파라미터 집합 == optimizer 키 집합\"과 \"optimizer마다 param_group 정확히 1개\"를 강제한다."
+    },
+    {
+      "id": "ef9beaf2-41cd-49ac-b255-635182d74484",
+      "question": "`DefaultStrategy`의 밀도화 절차는?",
+      "answer": "`_update_state`(grad2d 누적) → `_grow_gs`(duplicate/split) → `_prune_gs` 순으로 진행되는 원논문 휴리스틱이다."
+    },
+    {
+      "id": "d22d921a-aaf7-430a-9853-1828d24a7737",
+      "question": "`MCMCStrategy`의 동작 방식은?",
+      "answer": "`_relocate_gs`(죽은 가우시안 재배치) + `_add_new_gs`(샘플 추가) + noise injection으로 구성된다. 3DGS를 Markov Chain Monte Carlo로 보는 관점의 밀도화 전략이다."
+    },
+    {
+      "id": "27ef6eea-2fbb-41e4-b50b-6e83a0d8609a",
+      "question": "`strategy/ops.py`가 제공하는 9개 원시 연산은?",
+      "answer": "`duplicate`, `split`, `remove`, `reset_opa`, `relocate`, `sample_add`, `inject_noise_to_position`, `_update_param_with_optimizer`, `_cuda_fused_mcmc_perturb`다."
+    },
+    {
+      "id": "0869949b-b68c-45dc-b868-316cb219c1e6",
+      "question": "`_update_param_with_optimizer`의 시그니처와 핵심 역할은?",
+      "answer": "`_update_param_with_optimizer(param_fn, optimizer_fn, params, optimizers, names)` 형태로, 파라미터 텐서와 optimizer state를 **원자적으로 함께** 재구성한다."
+    },
+    {
+      "id": "f7f20280-ba80-4178-867c-ee5500532a52",
+      "question": "`_update_param_with_optimizer`에서 짝을 놓치면 어떤 문제가 생기는가?",
+      "answer": "Adam 모멘텀이 엉뚱한 가우시안에 붙는 무성(silent) 버그가 된다. 밀도화 후 학습 발산의 주요 원인이다."
+    },
+    {
+      "id": "f0a3cc93-08a8-45ac-acf4-5a2239e5c891",
+      "question": "`DefaultStrategy`와 eval3d의 호환성 문제는?",
+      "answer": "`DefaultStrategy`는 `means2d.grad`에 의존하는데 eval3d는 2D 평균을 만들지 않아 비호환이다. 트레이너가 이를 경고로만 알리며 조용히 잘못 동작할 수 있다."
+    },
+    {
+      "id": "dde42c5a-9a3b-4dfd-89ea-d93b530fed30",
+      "question": "`Scene` ABC가 정의하는 기본 인터페이스는?",
+      "answer": "`id`(non-empty str), `put`/`get`, 그리고 6개 topology hook이다. topology hook의 기본 구현은 no-op이다."
+    },
+    {
+      "id": "681d789b-c9cf-4100-ab3d-f3f9ebde75c3",
+      "question": "`GaussianScene`의 주요 API는?",
+      "answer": "`torch.nn.ParameterDict` 기반 splats 컨테이너로 `from_splats`, `state_dict`, `from_state_dict`, `num_gaussians`, `validate`를 제공한다."
+    },
+    {
+      "id": "b8a9e1f7-5956-4d35-81dd-66f38206a33f",
+      "question": "`GaussianInferenceScene`의 주요 API는?",
+      "answer": "fp16 packed 추론 전용 씬으로 `from_gaussian_scene`, `from_gaussian_tensors`, `release`(GPU 메모리 해제), `is_empty`를 제공한다."
+    },
+    {
+      "id": "a5b39422-87af-48db-aa16-f62faa3d4d78",
+      "question": "`Stage`의 크기와 알려진 설계 한계는?",
+      "answer": "117 LOC의 `scene_id → (scene, render_fn)` 레지스트리다. 의도적으로 Gaussian 전용이며, 클래스 docstring이 \"일반화하려면 `splats`를 `Scene`으로 올려야 한다\"고 한계를 남겨두었다."
+    },
+    {
+      "id": "a2d30148-5d3f-4ca7-bdf6-90a8a254813b",
+      "question": "`gsplat/cuda/build.py`의 핵심 책임은?",
+      "answer": "JIT 빌드와 AOT(`setup.py`) 빌드가 동일한 플래그를 쓰도록 하는 단일 소스다. 700행 규모이며 `get_build_parameters()`가 sources / include_dirs / cflags / cuda_cflags / ldflags를 반환한다."
+    },
+    {
+      "id": "7c73106f-6a36-48e6-8f6d-8a0976f59784",
+      "question": "`setup.py`가 `build.py`를 일반 import하지 않고 `importlib.util.spec_from_file_location`으로 로드하는 이유는?",
+      "answer": "빌드 전에 `gsplat`을 import하는 순환을 피하기 위해서다."
+    },
+    {
+      "id": "df66e713-451a-40a3-a9c3-4e3f4b579891",
+      "question": "`build.py`의 플랫폼별 분기는 어떻게 되는가?",
+      "answer": "win32는 `/std:c++20`, `/Zc:preprocessor`, darwin arm64는 `-arch arm64`, CUDA 13은 CCCL 헤더 경로(`targets/*/include/cccl`)를 처리한다."
+    },
+    {
+      "id": "3f865fb5-5435-4037-a997-27e1f4d2b6c2",
+      "question": "`_setup_py_build_parameters_mismatch_reason()`은 무엇을 하는가?",
+      "answer": "이미 컴파일된 확장이 현재 빌드 파라미터와 다를 때 사람이 읽을 수 있는 이유를 반환한다. 부분 재빌드 디버깅에 쓰인다."
+    },
+    {
+      "id": "c3c94183-4e55-4c47-8f46-08b19b9688ba",
+      "question": "`gsplat/experimental/`의 지연 로딩 방식은?",
+      "answer": "`__init__.py`가 PEP 562 `__getattr__`로 5개 심볼을 지연 노출해 `import gsplat.experimental`이 CUDA 확장을 건드리지 않게 한다. `BUILD_EXPERIMENTAL=0`으로 끌 수 있다."
+    },
+    {
+      "id": "abef82d4-1e97-4c22-85e0-fbad2f85ef09",
+      "question": "gsplat에서 확인된 모듈 레벨 순환 의존은 몇 개이며 공통 위험은?",
+      "answer": "3개다. 셋 다 현재는 동작하지만 **import 순서에 암묵적으로 의존**한다는 위험을 공유한다."
+    },
+    {
+      "id": "bbf3157f-985e-4628-b3ea-0f4ea853dddc",
+      "question": "가장 취약한 순환 의존(1번)은 무엇인가?",
+      "answer": "`gsplat` ↔ `gsplat.strategy`다. `gsplat/strategy/ops.py:26`이 최상위에서 `from gsplat import quat_scale_to_covar_preci`로 부분 초기화된 패키지에서 심볼을 당겨온다."
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "ecc3acc2-2ebb-4240-93a7-96fc5e8ceacd",
+      "question": "gsplat 배치 딕셔너리의 필수 키와 shape은 무엇인가?",
+      "answer": "`K [B,3,3]`, `camtoworld [B,4,4]`, `image [B,H,W,3]`(0~255), `image_id [B]`, `camera_idx [B]`가 필수다. 선택 키로 `mask`, `exposure`, `points`, `depths`가 있다."
+    },
+    {
+      "id": "80936c85-35de-4e9a-a84f-ae2d492db174",
+      "question": "`depth_loss=True`일 때 depth 감독 신호는 어디서 오는가?",
+      "answer": "`__getitem__`이 SfM 포인트를 해당 이미지 평면에 투영해 sparse depth 감독을 만든다. 별도 depth 센서 없이 COLMAP 재구성만으로 얻는다."
+    },
+    {
+      "id": "195ad53a-86a8-4fc9-b050-57c488859d1c",
+      "question": "gsplat 학습 루프에서 optimizer는 왜 파라미터별로 독립인가?",
+      "answer": "`strategy.check_sanity()`가 \"파라미터 1개당 optimizer 1개, param_group 정확히 1개\"를 강제한다. 밀도화가 파라미터와 optimizer state를 짝지어 재구성해야 하기 때문이다."
+    },
+    {
+      "id": "2710db3e-d13d-4342-9597-b7fa51b690f1",
+      "question": "gsplat의 배치 크기 스케일링 규칙 세 가지는 무엇인가?",
+      "answer": "`BS = batch_size × world_size`일 때 LR은 `× √BS`, eps는 `1e-15 / √BS`, betas는 `1 - BS(1-β)`로 조정한다. SDE scaling rules와 arXiv:2402.18824를 근거로 인용하되 \"정확히 등가는 아니다\"라고 명시한다."
+    },
+    {
+      "id": "757a4d1b-ff20-4026-9669-b036bc457431",
+      "question": "gsplat의 `betas` 계산에 어떤 버그 위험이 있는가?",
+      "answer": "`betas[0] = 1 - BS×(1-0.9)`이므로 `BS = 10`에서 0이 되고 그 이상에서는 음수가 되어 Adam이 의미를 잃는다. 코드에 `TODO: check betas logic when BS is larger than 10` 주석이 있으며 4 GPU × batch_size 1 = BS 4는 안전하다."
+    },
+    {
+      "id": "7f44aa01-788b-4f78-9f5d-4affb2b8678d",
+      "question": "gsplat에서 어떤 optimizer 클래스가 어떤 조건에 선택되는가?",
+      "answer": "`sparse_grad`면 `SparseAdam`, `visible_adam`이면 `SelectiveAdam`, 그 외에는 `Adam`(fused=True)이다."
+    },
+    {
+      "id": "78a0c175-e553-4eea-adf1-3e983675cb7e",
+      "question": "gsplat의 scheduler는 어떤 파라미터에만 걸리는가?",
+      "answer": "`means`에만 `ExponentialLR(gamma=0.01**(1/max_steps))`가 걸려 30,000 스텝에 초기값의 1%까지 감쇠한다. `scales`/`quats`/`opacities`/`sh0`/`shN`은 상수 LR이다."
+    },
+    {
+      "id": "dc23e179-813e-4edb-a758-f40b0c5a9f7a",
+      "question": "`bilateral_grid`의 scheduler가 특별한 이유는?",
+      "answer": "`ChainedScheduler([LinearLR(0.01→1, 1000 iters), ExponentialLR])`로 warmup이 있는 유일한 경로다. `pose_opt`은 `means`와 같은 `ExponentialLR`, `ppisp`는 자체 `create_schedulers()`를 쓴다."
+    },
+    {
+      "id": "b24e92c9-6409-4a3e-be25-380c01a12a8e",
+      "question": "gsplat 부가 모듈의 LR과 weight_decay는 어떻게 설정되는가?",
+      "answer": "`pose_adjust`는 `1e-5 × √BS`, `app_module.embeds`는 `1e-3 × √BS × 10`, `app_module.color_head`는 `1e-3 × √BS`(별도 그룹)이며 모두 weight_decay `1e-6`이다."
+    },
+    {
+      "id": "603134fb-2647-409c-9035-5cd383b11c07",
+      "question": "gsplat의 photometric loss 공식은 무엇인가?",
+      "answer": "`loss = torch.lerp(l1loss, ssimloss, ssim_lambda)` = $(1-\\lambda)L_1 + \\lambda \\cdot \\text{SSIM}$이며 $\\lambda = 0.2$가 기본이다. L1은 `l1_loss(colors, pixels).mean()`, SSIM은 채널 순서를 permute해 계산한다."
+    },
+    {
+      "id": "1e1e6747-06a3-4ce7-aca8-26eb4e929a7b",
+      "question": "gsplat의 depth loss는 어떻게 계산되는가?",
+      "answer": "`F.grid_sample`로 depth map에서 sparse 포인트 위치를 샘플한 뒤 `depth_l1_loss(depths, depths_gt, scene_scale)`를 disparity 공간에서 계산하고 `depth_lambda=1e-2`를 곱해 더한다."
+    },
+    {
+      "id": "544f85a6-1e97-401d-b08a-9e2165b0df83",
+      "question": "L1과 SSIM의 mask 처리가 다른 이유는 무엇인가?",
+      "answer": "L1은 `colors[masks]` 인덱싱으로 마스크 픽셀을 **제외**할 수 있지만, SSIM은 패치 기반이라 제외가 불가능해 양쪽을 0으로 **곱한다**. 주석에 \"마스크된 패치가 색을 임의 값으로 끌어당기지 않도록\"이라는 이유가 있다."
+    },
+    {
+      "id": "f69ba0e1-a41d-45b0-8ac0-f6171ce940b2",
+      "question": "`default`와 `mcmc` 프리셋의 손실/초기화 가중치 차이는?",
+      "answer": "`ssim_lambda`는 둘 다 0.2지만, mcmc는 `opacity_reg` 0.01, `scale_reg` 0.01, `init_opa` 0.5, `init_scale` 0.1을 쓴다(default는 각각 0.0, 0.0, 0.1, 1.0)."
+    },
+    {
+      "id": "05932419-a321-45c6-af91-9e19481c40e8",
+      "question": "`gsplat/losses.py`에는 어떤 손실들이 있는가?",
+      "answer": "40개 이상으로 LiDAR distance/intensity/raydrop/background, Pearson depth, binocular disparity, masked L1/SSIM, huber, BCE, normal cosine 등이 있다. 트레이너는 그중 일부만 쓴다."
+    },
+    {
+      "id": "b972599c-bf8d-4bde-ac76-9ada1e8f22cf",
+      "question": "gsplat이 사용하지 않는 일반적인 학습 기법들은 무엇인가?",
+      "answer": "AMP/mixed precision(`autocast`, `GradScaler`), gradient accumulation, gradient clipping, EMA, Dropout/BatchNorm/LayerNorm을 모두 쓰지 않는다. LR warmup은 `bilateral_grid`에만 있다."
+    },
+    {
+      "id": "c739e992-0c98-4e69-87e7-ee71721c5c32",
+      "question": "gsplat이 전체 AMP 대신 택한 정밀도 전략은 무엇인가?",
+      "answer": "\"커널 단위 정밀도 선택\"이다. `sh_fp16=True`면 SH 계수만 fp16으로 캐스트하되 파라미터와 Adam state는 fp32로 유지하고, `experimental/` HiGS는 추론 전용 fp16 패킹을 쓴다. 알파 블렌딩 누적의 수치 안정성 때문일 가능성이 높다."
+    },
+    {
+      "id": "254b039e-8041-4c65-9c1c-a855e3c40606",
+      "question": "gsplat에서 밀도화가 차지하는 위치는 무엇인가?",
+      "answer": "일반 ML의 \"학습 기법\"(AMP, clipping, EMA 등) 자리를 사실상 밀도화가 차지한다. `DefaultStrategy`와 `MCMCStrategy`의 하이퍼파라미터가 학습 결과를 좌우한다."
+    },
+    {
+      "id": "e8c07282-f05f-4586-a4f3-f822010c340a",
+      "question": "`DefaultStrategy`의 prune 관련 기본 임계값은 무엇인가?",
+      "answer": "`prune_opa=0.005`(이보다 불투명도 낮으면 제거), `prune_scale3d=0.1`, `prune_scale2d=0.15`(이상이면 제거)다."
+    },
+    {
+      "id": "5523f4c5-023b-4126-a9be-62086f05bf60",
+      "question": "`DefaultStrategy`에서 duplicate와 split은 어떻게 갈리는가?",
+      "answer": "`grow_grad2d=0.0002`보다 화면 gradient가 크면 성장 대상이 되고, `grow_scale3d=0.01`(scene_scale 정규화) 이하면 duplicate, 이상이면 split이다. `grow_scale2d=0.05`(이미지 정규화) 이상이면 split이다."
+    },
+    {
+      "id": "74c5d3e6-65d4-45be-8b24-d08abf0446a0",
+      "question": "`DefaultStrategy`의 밀도화 스케줄 기본값은 무엇인가?",
+      "answer": "`refine_start_iter=500`, `refine_stop_iter=15000`(max_steps의 절반), `refine_every=100`, `reset_every=3000`(불투명도 리셋 주기)이다."
+    }
+  ]
+}

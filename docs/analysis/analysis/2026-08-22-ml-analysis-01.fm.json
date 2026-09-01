@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "8e3821e6-6bf8-484e-8db7-196fb3ac3669",
+      "question": "gsplat 프로젝트가 일반적인 ML 프로젝트와 근본적으로 다른 첫 번째 이유는 무엇인가?",
+      "answer": "학습되는 것이 신경망이 아니라 장면 자체다. 최적화 대상은 N개 3D 가우시안의 위치·회전·스케일·불투명도·SH 계수를 담은 `torch.nn.ParameterDict` 하나이며, 레이어·활성 함수·가중치 행렬이 없고 `nn.Module`을 상속한 모델 클래스가 아예 존재하지 않는다."
+    },
+    {
+      "id": "00350365-5953-4d6f-a124-2ae7b3560716",
+      "question": "gsplat에서 학습 중 파라미터 개수가 변한다는 것은 무슨 뜻인가?",
+      "answer": "밀도화(densification)가 매 100 스텝마다 가우시안을 복제/분할/제거해 N을 바꾼다. 그때마다 optimizer state도 함께 재구성되며, 이는 파라미터 shape이 고정인 일반적인 ML과 정반대다."
+    },
+    {
+      "id": "2460a3ba-46fd-4ee6-a421-24be404fdbbc",
+      "question": "gsplat 학습의 목표가 일반화가 아니라는 것은 무슨 의미인가?",
+      "answer": "한 장면당 하나의 모델을 30,000 스텝 학습해 그 장면의 학습 뷰에 최대한 맞추는 의도적 과적합이다. train/val 분리는 \"8장마다 1장\"이라는 뷰 홀드아웃일 뿐이고, 사전학습 가중치도 전이학습도 없다."
+    },
+    {
+      "id": "b83046c0-a801-4035-b515-8edcead23950",
+      "question": "gsplat에서 유일한 사전학습 가중치는 무엇인가?",
+      "answer": "평가 지표용 LPIPS 네트워크(AlexNet 또는 VGG)다. 학습 자체에는 어떤 사전학습 가중치도 쓰이지 않고, SfM 초기화가 유일한 \"prior\" 역할을 한다."
+    },
+    {
+      "id": "d2cfe3b0-3545-42e0-bbcf-21997e81a5e5",
+      "question": "gsplat 패키지 본체와 학습 코드의 위치는 어떻게 나뉘는가?",
+      "answer": "`pip install gsplat`으로 얻는 것은 미분 가능한 래스터라이저(커널 라이브러리)이고, 트레이너는 `examples/`에 참조 구현으로만 제공된다. `examples/simple_trainer.py`는 라이브러리 API가 아니다."
+    },
+    {
+      "id": "4f5eb928-726c-4cd0-9270-a4bdc2a3a52c",
+      "question": "gsplat에서 진짜 신경망이 존재하는 세 곳은 어디인가?",
+      "answer": "`AppearanceOptModule`(2층 MLP), `contrib/dynamic`의 `HexPlaneField` + `DeformNetwork`(G-SHARP), `examples/lib_bilagrid.py`의 `BilateralGrid`다. 모두 선택적 부가 모듈이다."
+    },
+    {
+      "id": "1014d7f3-515f-4129-bc67-aac9d5239370",
+      "question": "gsplat의 태스크와 감독 신호는 무엇인가?",
+      "answer": "태스크는 Novel-View Synthesis(신규 시점 합성)와 3D 장면 재구성이며, 학습 방식은 per-scene 최적화다. 감독 신호는 학습 이미지 자체(레이블 없음)이고 선택적으로 sparse depth, LiDAR 거리/강도를 쓴다."
+    },
+    {
+      "id": "b9e14f59-f991-40a3-b41b-d327e89705d7",
+      "question": "gsplat은 전통적 ML 분류(classification/detection/generation 등) 중 어디에 속하는가?",
+      "answer": "어느 것에도 해당하지 않는다. 가장 가까운 것은 \"generation\"이지만 생성 모델이 아니라 결정론적 최적화(inverse rendering)다."
+    },
+    {
+      "id": "726446fd-d892-4019-8a49-6749e19c18bf",
+      "question": "gsplat의 설정 시스템은 무엇을 쓰며 무엇을 쓰지 않는가?",
+      "answer": "**tyro**(dataclass → CLI)를 쓴다. Hydra/OmegaConf/yacs/argparse는 쓰지 않으며 `configs/` 디렉토리가 없고 설정이 Python dataclass 안에 산다."
+    },
+    {
+      "id": "b065e1c6-c9ac-4676-b2d4-f092479f16ac",
+      "question": "gsplat의 실험 추적 도구는 무엇인가?",
+      "answer": "**TensorBoard**(`SummaryWriter`) + JSON stats만 쓴다. wandb/mlflow/neptune/clearml은 전혀 사용하지 않고, 시각화는 viser 실시간 브라우저 뷰어를 쓴다."
+    },
+    {
+      "id": "605bbecc-6f15-4a92-9451-2338428d8e5e",
+      "question": "gsplat의 평가 지표와 사용 라이브러리는 무엇인가?",
+      "answer": "torchmetrics 1.8.2로 PSNR, SSIM, LPIPS를 계산한다. LPIPS 네트워크는 `alex`가 기본이고 `--lpips_net vgg`로 바꿀 수 있다."
+    },
+    {
+      "id": "00fb0a87-8e7c-4d8f-9dd7-7be1d2cb4469",
+      "question": "`examples/requirements.txt`가 torch 버전을 정확히 핀하는 이유는?",
+      "answer": "`torch==2.9.1` / `torchvision==0.24.1`로 핀하며, 주석에 \"torchvision이 PyPI 공개 torch를 끌어와 내부 빌드를 덮어쓰는 것을 막기 위함\"이라고 명시되어 있다."
+    },
+    {
+      "id": "bb0e02ee-9719-4f79-a79d-9b5e1a56a449",
+      "question": "AbsGS 논문은 gsplat에서 어떻게 활성화하며 무엇을 하는가?",
+      "answer": "`--absgrad --grow_grad2d 8e-4`로 켠다(arXiv:2404.10484). `DefaultStrategy.absgrad`가 2D 평균 gradient의 절댓값을 프루닝 기준으로 써서 메모리를 절반으로 줄이면서 품질도 개선한다."
+    },
+    {
+      "id": "56ebd3ba-82bd-4b37-a848-0f6b5973e460",
+      "question": "3DGS as MCMC는 gsplat에서 어떻게 쓰는가?",
+      "answer": "`mcmc` 서브커맨드로 활성화한다(arXiv:2404.09591). `MCMCStrategy`가 `cap_max`로 가우시안 개수 상한을 강제하고 noise injection과 relocation을 수행한다."
+    },
+    {
+      "id": "b4f899d5-4c44-4620-abbf-da97570170b0",
+      "question": "Mip-Splatting은 gsplat에서 어떤 플래그로 켜지는가?",
+      "answer": "`--antialiased` 플래그로 `rasterize_mode=\"antialiased\"`를 켠다. 투영 공분산에 저역통과 필터와 opacity 보정을 적용한다."
+    },
+    {
+      "id": "5fa22367-755d-4981-a4ec-8910330594c5",
+      "question": "3DGUT를 gsplat에서 활성화하는 방법은?",
+      "answer": "`--with_ut --with_eval3d`로 켠다. NVIDIA의 Unscented Transform 기반 경로로 왜곡과 롤링셔터를 UT로 처리한다."
+    },
+    {
+      "id": "2a9f0386-ff5c-4ad1-bcaa-7dfb01a1e03c",
+      "question": "gsplat에서 분산 학습을 구현한 근거 논문은?",
+      "answer": "\"On Scaling Up 3D Gaussian Splatting Training\"(arXiv:2406.18533)이다. Seam A/B 분산 렌더로 구현되어 있고 `--distributed`로 활성화한다."
+    },
+    {
+      "id": "8427470f-da59-4195-8756-e8d778eee921",
+      "question": "Taming 3DGS에서 유래한 gsplat의 기능은 무엇인가?",
+      "answer": "`optimizers/selective_adam.py`의 SelectiveAdam이다. `--visible_adam` 플래그로 켜며 가시 가우시안만 Adam 갱신한다."
+    },
+    {
+      "id": "3de9b78b-1494-4b2d-8399-c2dff6cda6f0",
+      "question": "gsplat 라이브러리에서 `rendering.py`의 ML적 역할은 무엇인가?",
+      "answer": "forward 렌더를 담당하며 일반 ML 모델의 `forward()`에 해당한다. `rasterize_splats()` → `rasterization()` → 단일 C++ op 경로를 탄다."
+    },
+    {
+      "id": "dea25ef4-cff1-4cae-a99e-a8d4426a6b29",
+      "question": "gsplat의 `strategy/` 디렉토리는 ML 관점에서 무엇에 해당하는가?",
+      "answer": "밀도화(densification)를 담당하며 gsplat 고유의 \"옵티마이저 확장\"에 해당한다. `DefaultStrategy`와 `MCMCStrategy`가 여기 있다."
+    }
+  ]
+}
