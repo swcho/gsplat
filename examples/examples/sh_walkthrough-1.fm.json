@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "5fda6d59-0116-4049-ba03-afe3dff21c7d",
+      "question": "3D Gaussian Splatting(3DGS)은 각 Gaussian의 색을 어떤 형태로 저장하는가?",
+      "answer": "RGB 값 하나가 아니라 **SH 계수 16개 × 3채널**(총 48개 실수)로 저장한다. 이 덕분에 보는 방향에 따라 색이 달라지는 시점 의존 색을 표현할 수 있다."
+    },
+    {
+      "id": "c3653bbd-aa8e-492a-b4fc-31a899de47ff",
+      "question": "Spherical Harmonics(SH)는 1차원 신호 처리의 어떤 개념에 대응되는가?",
+      "answer": "1차원 주기 함수의 **푸리에 급수**에 대응한다. 사인·코사인이 주기 함수의 기저 역할을 하듯, SH $Y_\\ell^m$은 구면 위에 정의된 함수 $f(\\mathbf d)$의 정규직교 기저 역할을 한다."
+    },
+    {
+      "id": "ff02966f-5aba-4d7f-8170-d35e7e4371bc",
+      "question": "SH 급수 전개식 $f(\\mathbf d)\\approx\\sum_{\\ell=0}^{L}\\sum_{m=-\\ell}^{\\ell} c_\\ell^m Y_\\ell^m(\\mathbf d)$ 에서 $\\ell$과 $m$은 각각 무엇을 뜻하는가?",
+      "answer": "$\\ell$은 **차수(degree, band)**로 클수록 구면 위에서 더 빠르게 진동하는 고주파 성분이다. $m$은 차수 $\\ell$ 안의 인덱스로 $-\\ell\\le m\\le\\ell$ 범위를 가지며, 차수 $\\ell$에는 $2\\ell+1$개의 기저가 있다."
+    },
+    {
+      "id": "3a57a204-084d-44ae-8c29-159bb29b0da7",
+      "question": "차수 $L$까지 SH를 사용할 때 기저의 총 개수는 얼마이며, 3DGS에서는 몇 개를 쓰는가?",
+      "answer": "$\\sum_{\\ell=0}^{L}(2\\ell+1)=(L+1)^2$개다. 3DGS는 $L=3$을 사용하므로 $4^2=16$개의 기저를 쓴다."
+    },
+    {
+      "id": "0f156fac-d6d3-46ea-b907-45bb0d0fdc60",
+      "question": "SH 기저의 정규직교성은 어떤 식으로 표현되는가?",
+      "answer": "구면 전체 적분 $d\\Omega=\\sin\\theta\\,d\\theta\\,d\\varphi$에 대해 $\\int_{S^2} Y_\\ell^m Y_{\\ell'}^{m'}\\,d\\Omega=\\delta_{\\ell\\ell'}\\delta_{mm'}$ 이다. 서로 다른 기저의 내적은 0, 자기 자신과의 내적은 1이다."
+    },
+    {
+      "id": "2fe5deee-fb03-45a1-aeb8-01c222bf8284",
+      "question": "SH 기저가 정규직교하기 때문에 계수 $c_\\ell^m$은 어떻게 구할 수 있는가?",
+      "answer": "푸리에 계수처럼 함수와 기저의 **내적(사영)** 한 번으로 구한다. $c_\\ell^m=\\int_{S^2} f(\\mathbf d)\\,Y_\\ell^m(\\mathbf d)\\,d\\Omega$."
+    },
+    {
+      "id": "04b924b8-dccd-43b4-ae8d-dbfd90f95db2",
+      "question": "실수형 SH의 정의에서 $m>0$, $m=0$, $m<0$인 경우는 각각 어떤 삼각함수와 결합되는가?",
+      "answer": "$m>0$이면 $\\sqrt2\\,K_\\ell^m\\cos(m\\varphi)P_\\ell^m(\\cos\\theta)$, $m=0$이면 $K_\\ell^0 P_\\ell^0(\\cos\\theta)$, $m<0$이면 $\\sqrt2\\,K_\\ell^{|m|}\\sin(|m|\\varphi)P_\\ell^{|m|}(\\cos\\theta)$이다. 여기서 $P_\\ell^m$은 연관 르장드르 함수다."
+    },
+    {
+      "id": "578a830c-3885-4b56-b7a5-aa4af8125820",
+      "question": "SH 정의에 나오는 정규화 상수 $K_\\ell^m$의 식은?",
+      "answer": "$K_\\ell^m=\\sqrt{\\frac{2\\ell+1}{4\\pi}\\frac{(\\ell-|m|)!}{(\\ell+|m|)!}}$ 이다. 이 상수가 기저의 구면 적분 노름을 1로 맞춰 준다."
+    },
+    {
+      "id": "9a6f5ce9-cfd7-4476-ac54-9e2df525542b",
+      "question": "실제 코드에서 SH 기저는 구면 좌표 대신 어떤 형태로 계산하는가?",
+      "answer": "직교좌표 $(x,y,z)$의 **다항식**으로 풀어 쓴다. 예를 들어 $Y_1^0=\\sqrt{3/4\\pi}\\,z$, $Y_2^{-2}=\\sqrt{15/4\\pi}\\,xy$ 처럼 단위 방향 벡터 성분의 곱으로 표현된다."
+    },
+    {
+      "id": "244626e2-cbdf-4623-be4b-ce8204f99900",
+      "question": "0차 SH 기저 $Y_0^0$의 값은 얼마인가?",
+      "answer": "$Y_0^0=\\frac{1}{2\\sqrt\\pi}\\approx0.2821$로, 방향과 무관한 **상수**다. 코드에서는 `C0 = 0.28209479177387814`로 정의된다."
+    },
+    {
+      "id": "163a6c71-b098-498e-af6e-b4ac2d3d70b0",
+      "question": "1차 SH 기저 세 개 $Y_1^{-1}, Y_1^0, Y_1^1$은 각각 어떤 식인가?",
+      "answer": "$Y_1^{-1}=-\\sqrt{3/4\\pi}\\,y$, $Y_1^0=\\sqrt{3/4\\pi}\\,z$, $Y_1^1=-\\sqrt{3/4\\pi}\\,x$ 이다. 상수 $\\sqrt{3/4\\pi}\\approx0.4886$이며, 1차는 방향 성분 자체(선형)에 해당한다."
+    },
+    {
+      "id": "24936933-14ef-4a70-90a2-5dc653add67b",
+      "question": "2차 SH 기저 $Y_2^0$의 식은 무엇이며 다른 2차 기저와 어떤 차이가 있는가?",
+      "answer": "$Y_2^0=\\sqrt{5/16\\pi}\\,(3z^2-1)$로 $z$축 대칭(zonal) 형태다. 나머지 2차 기저는 $xy$, $yz$, $xz$, $x^2-y^2$ 형태의 이차 단항식에 $\\sqrt{15/4\\pi}$ 또는 $\\sqrt{15/16\\pi}$ 상수가 곱해진다."
+    },
+    {
+      "id": "e75ada30-fbc0-449b-bb8f-c4846c6700b1",
+      "question": "3DGS/gsplat이 SH 기저의 부호에 사용하는 규약은?",
+      "answer": "**Condon–Shortley 규약**이다. 예컨대 $Y_1^{1}=-\\sqrt{3/4\\pi}\\,x$ 처럼 특정 항에 음수 부호가 붙는다."
+    },
+    {
+      "id": "aa0eb400-b35a-48e2-aa47-d89212501853",
+      "question": "$\\ell$차 SH를 다항식 관점에서 한 문장으로 정의하면?",
+      "answer": "$x,y,z$의 **$\\ell$차 동차 다항식을 단위구에 제한한 것**이다. 0차는 상수, 1차는 선형, 2차는 이차식이므로 $\\ell$이 커질수록 구면 위에서 더 잘게 진동한다."
+    },
+    {
+      "id": "8e0cf138-d2ba-4475-ac02-c021cd9a1669",
+      "question": "3DGS/gsplat에서 SH 계수 배열의 인덱스 $k$와 $(\\ell,m)$의 대응 규칙은?",
+      "answer": "$k=\\ell^2+\\ell+m$ 이다. 따라서 $k=0\\to(0,0)$, $k=1,2,3\\to(1,-1),(1,0),(1,1)$, $k=4\\sim8\\to$ 2차, $k=9\\sim15\\to$ 3차 순서다."
+    },
+    {
+      "id": "602d3191-2e53-480d-922e-5fcc831b42b7",
+      "question": "노트북의 `sh_bases(dirs, degree)` 함수는 무엇을 입력받아 무엇을 반환하는가?",
+      "answer": "단위 방향 벡터 `dirs[..., 3]`와 차수를 받아 SH 기저값 `[..., (degree+1)²]`를 반환한다. gsplat의 `_eval_sh_bases_fast`와 같은 값과 순서를 $(\\ell,m)$별 다항식으로 풀어 쓴 구현이다."
+    },
+    {
+      "id": "f79896c7-36ce-429d-abc4-446d96d9916c",
+      "question": "`sphere_grid` 함수는 구면 적분을 어떻게 근사하기 위한 것인가?",
+      "answer": "구면을 $(\\theta,\\varphi)$ 격자로 덮는 방향 벡터 `d[nθ,nφ,3]`와 적분 가중치 $w=\\sin\\theta\\,d\\theta\\,d\\varphi$를 만든다. 가중치 합은 구 표면적 $4\\pi$에 근사하며, 격자 구적으로 적분을 대체한다."
+    },
+    {
+      "id": "8fcc3fc7-b29b-4a71-9647-2f0a5894bfd0",
+      "question": "`sphere_grid`에서 $\\theta$(극각)와 $\\varphi$(방위각)의 범위와 정의는?",
+      "answer": "$\\theta$는 z축에서 잰 극각으로 $(0,\\pi)$ 범위, $\\varphi$는 방위각으로 $(-\\pi,\\pi)$ 범위다. 격자 셀 중심을 쓰기 위해 인덱스에 0.5를 더한 뒤 간격을 곱한다."
+    },
+    {
+      "id": "9fa7bd29-2486-48b6-89e1-1a9f53c71fd2",
+      "question": "노트북에서 SH 기저의 정규직교성을 수치적으로 확인하는 방법은?",
+      "answer": "Gram 행렬 `einsum(\"abi,abj,ab->ij\", B, B, w)`로 $\\int Y_iY_j\\,d\\Omega$를 격자 구적 계산하고, 16×16 단위행렬과의 최대 차이를 출력한다. 차이가 거의 0이면 정규직교성이 확인된다."
+    }
+  ]
+}

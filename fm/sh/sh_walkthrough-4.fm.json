@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "b2d87a6b-8c5e-470c-8794-ce10e11ab0ec",
+      "question": "같은 Gaussian, 같은 계수를 `sh_degree`만 0→3으로 바꿔 평가하면 방향 지도는 어떻게 변하는가?",
+      "answer": "차수 0에서는 방향 무관 단색이고, 차수가 올라갈수록 점차 방향별 세부(색 변화)가 붙는다. 활성화 차수 이후의 계수는 무시되므로 계수를 바꾸지 않아도 결과가 달라진다."
+    },
+    {
+      "id": "60f978c2-2bfc-42ac-ae41-de40807dac24",
+      "question": "3DGS는 SH 계수를 적분(사영)으로 구하지 않는다. 그 이유와 대안은?",
+      "answer": "진짜 함수 $f$를 모르기 때문이다. 대신 여러 카메라에서 관측한 색과 렌더 결과의 차이를 **역전파**해서 계수를 갱신하는, \"관측으로부터의 역평가\" 방식을 쓴다."
+    },
+    {
+      "id": "ba5af58f-8321-4140-b725-b23f4af3689b",
+      "question": "노트북 4.2절의 축소 실험에서 정답 함수 `f_star`는 어떤 형태인가?",
+      "answer": "확산 기본색 `(0.6, 0.35, 0.2)`에 방향 `(-0.4, 0.6, 0.7)` 쪽으로 $\\max(0,\\mathbf d\\cdot\\mathbf h)^8$ 형태의 넓은 광택 로브를 0.6배 더한 시점 의존 색이다."
+    },
+    {
+      "id": "0088e583-f26b-454a-8e24-9dfbc92044c7",
+      "question": "SH 계수를 관측으로부터 구하는 두 가지 방법(방법 A, B)은?",
+      "answer": "방법 A는 **최소제곱 해**: $\\min_{\\mathbf c}\\sum_j\\|Y(\\mathbf d_j)\\mathbf c-f^\\star(\\mathbf d_j)\\|^2$로, 선형이므로 닫힌 형태로 풀린다. 방법 B는 **Adam 경사하강**으로 실제 3DGS 학습과 같은 방식이다."
+    },
+    {
+      "id": "bee6bc2f-8c72-4776-807d-529b6af9e196",
+      "question": "`fit_lstsq(obs_dirs, obs_rgb, degree)` 함수는 어떻게 구현되는가?",
+      "answer": "관측 방향에서 기저 행렬 $A=$ `sh_bases(obs_dirs, degree)` `[n,K]`를 만들고 `torch.linalg.lstsq(A, obs_rgb).solution`으로 계수 `[K,3]`를 구한다."
+    },
+    {
+      "id": "6fad40be-05d8-433b-8ed0-807f479424fb",
+      "question": "관측 뷰 수와 SH 차수를 바꾸며 전 구면 MSE를 측정한 실험에서 드러나는 두 가지 실패 양상은?",
+      "answer": "관측 수가 적으면 고차가 **과적합**해 관측 사이에서 색이 요동친다. 차수가 낮으면 하이라이트를 **표현하지 못한다**. 즉 관측 수와 차수 사이에 균형이 필요하다."
+    },
+    {
+      "id": "1fb73cd0-ac64-4e22-88ed-7f1b79fd43d8",
+      "question": "`sphere_mse(coeffs, degree)` 함수는 무엇을 측정하는가?",
+      "answer": "계수로 전 구면 격자에서 복원한 색과 정답 `f_true`의 차이를 적분 가중치 $w$로 평균한 **구면 평균 MSE**다. 관측 지점뿐 아니라 보지 않은 방향의 오차까지 포함한다."
+    },
+    {
+      "id": "d609ed2d-e860-4e61-9353-60f330d96846",
+      "question": "노트북의 Adam 학습 셀은 3DGS 학습의 어떤 요소들을 흉내내는가?",
+      "answer": "`sh0`와 `shN`에 다른 학습률(2.5e-2 와 그 1/20), `min(step // 500, 3)`로 차수 점진 활성화, 예측에 `+0.5`와 `clamp_min(0)` 적용, L1 loss 사용이다."
+    },
+    {
+      "id": "a5cff782-f47c-4998-8de6-a5c8c112d93e",
+      "question": "Adam으로 학습한 계수를 최소제곱 해나 $f^\\star$와 직접 비교하기 위해 `coeffs_gd[0] += 0.5 / C0`를 하는 이유는?",
+      "answer": "학습식에 포함된 $+0.5$ 오프셋을 DC 계수로 흡수하기 위해서다. $0.5=(0.5/C_0)\\cdot Y_0^0$이므로 DC 계수에 $0.5/C_0$을 더하면 오프셋 없는 순수 SH 합과 같아진다."
+    },
+    {
+      "id": "d67618f4-02de-4d01-9b99-01ce5f406370",
+      "question": "노트북이 gsplat과의 교차 검증 셀을 기본적으로 꺼 둔(`COMPARE_WITH_GSPLAT = False`) 이유는?",
+      "answer": "`import gsplat`이 CUDA 확장 **JIT 빌드**를 유발할 수 있어서다. 노트북 자체는 순수 PyTorch만으로 GPU 없이도 동작하도록 설계되었다."
+    },
+    {
+      "id": "590b0414-2a95-4bbe-8939-a0c9e14fe3dc",
+      "question": "gsplat의 `_eval_sh_bases_fast`는 어떤 방식으로 기저를 계산하며 최대 몇 차까지 지원하는가?",
+      "answer": "Sloan(2013)의 **점화식**으로 기저를 계산한다. 4차, 즉 25개 기저까지 지원한다."
+    },
+    {
+      "id": "f01030c5-3b1b-478b-b314-7af0c5034e86",
+      "question": "gsplat에서 SH 관련 구현이 위치한 파일과 역할은?",
+      "answer": "`gsplat/cuda/_torch_impl.py`의 `_eval_sh_bases_fast`(기저)와 `_spherical_harmonics`(정규화+내적), `gsplat/cuda/csrc/SphericalHarmonicsCUDA.cu`(CUDA fwd/bwd 커널), `gsplat/rendering.py`의 `_maybe_evaluate_sh`(`+0.5`, `clamp_min(0)`, 컬링된 Gaussian 마스킹)이다."
+    },
+    {
+      "id": "bb03e1e6-7d0f-4151-84ea-93e1095281f2",
+      "question": "gsplat의 `_maybe_evaluate_sh`가 수행하는 세 가지 후처리는?",
+      "answer": "SH 평가 결과에 `+0.5` 오프셋을 더하고, `clamp_min(0)`으로 음수를 잘라내며, 컬링된(화면 밖) Gaussian을 마스킹한다."
+    },
+    {
+      "id": "435515df-c6f1-492c-ba9e-e731bb46b603",
+      "question": "3DGS/gsplat 용어 정리: SH 계수 $c_k$는 수학적으로 무엇이며 gsplat에서 어떤 형태의 파라미터인가?",
+      "answer": "$f$를 기저에 사영한 값 $\\int fY_k\\,d\\Omega$이다. gsplat에서는 Gaussian당 `[16,3]` 학습 파라미터로 `sh0`와 `shN`으로 나뉜다."
+    },
+    {
+      "id": "2ae7100c-68e8-42ed-aa27-13519c57a82b",
+      "question": "3DGS의 16개 SH가 표현할 수 있는 시점 의존성의 한계는?",
+      "answer": "광택이나 프레넬 같은 **부드러운 시점 의존성**까지만 표현한다. 거울 반사나 굴절 같은 날카로운 고주파 효과는 표현하지 못한다."
+    },
+    {
+      "id": "ebe36f8a-d04e-4952-ab29-885d53e8719c",
+      "question": "3DGS의 SH 한계를 극복하기 위해 후속 연구가 채택한 대안들은?",
+      "answer": "작은 MLP(시점 의존 디코더), 구면 가우시안(Spherical Gaussians), 반사 방향 기반 인코딩 등이다. 모두 날카로운 반사·굴절을 더 잘 표현하기 위한 것이다."
+    },
+    {
+      "id": "2eb5bfb0-4c2e-46b0-ba30-482fbd7589c3",
+      "question": "SH 기저의 차수가 낮을 때와 높을 때 각각 표현하는 성분을 비교하면?",
+      "answer": "저차는 구면 위에서 천천히 변하는 **부드러운 근사**(저주파)를, 고차는 빠르게 진동하는 **세부**(고주파)를 담는다. 급수를 저차에서 자르면 저역 통과 필터 효과가 난다."
+    },
+    {
+      "id": "eb6f5434-7ab9-41bd-be37-7b8a90f61a18",
+      "question": "SH \"사영\"과 SH \"평가\"의 관계를 비교하면?",
+      "answer": "사영은 함수 $f$에서 계수 $c_k=\\int fY_k\\,d\\Omega$를 구하는 분석 단계이고, 평가는 계수에서 함수값 $\\sum_k c_kY_k(\\mathbf d)$를 구하는 합성 단계다. 서로 역방향 연산이다."
+    },
+    {
+      "id": "1a2da746-0447-49c0-a012-fd93700b61de",
+      "question": "이 노트북(`sh_walkthrough.py`)의 구성 네 부분은?",
+      "answer": "(1) SH란 무엇인가(구면 위 함수의 푸리에 급수), (2) SH의 응용처, (3) DC 계수와 3DGS 초기화 `(rgb−0.5)/C0`, (4) SH 평가와 학습에서 계수를 맞추는 과정이다. 추가로 gsplat 교차 검증(선택)과 정리 표가 있다."
+    }
+  ]
+}
