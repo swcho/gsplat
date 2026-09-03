@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "ec6fe882-3010-45ba-8786-87d1a9173e31",
+      "question": "duplicate 연산의 조건과 효과는?",
+      "answer": "화면 grad 평균 > `2e-4`이고 크기 ≤ 1%·scene_scale일 때 발생한다. 작은데 오차가 큰 곳의 Gaussian을 복제해 표현력을 늘린다."
+    },
+    {
+      "id": "77a9fa42-3d85-423e-b516-194b15fc453d",
+      "question": "split 연산의 조건과 효과는?",
+      "answer": "화면 grad 평균 > `2e-4`이고 크기 > 1%·scene_scale일 때 발생한다. 큰데 오차가 큰 Gaussian을 2개로 쪼개고 크기를 1.6으로 나눈다."
+    },
+    {
+      "id": "ef37980e-a2b4-4d74-92bb-43cb4232d6dc",
+      "question": "prune 연산의 조건은?",
+      "answer": "opacity < `0.005`이거나 크기 > 10%·scene_scale인 경우다. 기여가 없는 것과 비대해진 것을 제거한다."
+    },
+    {
+      "id": "00d4b4c4-cc66-4cf7-a4d9-7410c3a4983b",
+      "question": "opacity reset은 언제, 어떻게 일어나며 목적은?",
+      "answer": "매 3000스텝마다 전체 opacity를 0.01로 리셋한다. 카메라 앞에 떠 있는 floater를 정리하는 효과가 있다."
+    },
+    {
+      "id": "6af5b3ae-0c30-460f-88fe-c9c91c45d17d",
+      "question": "DefaultStrategy의 refine은 어느 스텝 구간에서 얼마나 자주 실행되는가?",
+      "answer": "스텝 500~15000 구간에서 100스텝마다 실행된다. 그 이후에는 Gaussian 개수가 고정된다."
+    },
+    {
+      "id": "8ac4eda6-c823-41e1-9536-0e31b31a0e23",
+      "question": "화면공간 gradient는 어떤 기준으로 정규화해서 누적하는가?",
+      "answer": "`[-1,1]` NDC 기준으로 정규화해 누적한다(default.py:248). 해상도에 무관한 임계값을 쓸 수 있게 된다."
+    },
+    {
+      "id": "566062d8-4e35-4522-a343-80439990f532",
+      "question": "`absgrad=True` 옵션(AbsGS)은 무엇이 다른가?",
+      "answer": "픽셀별 gradient의 절대값 합을 쓴다. 부호 상쇄가 없어 더 민감한 분할 신호가 되며, 이때 임계값은 0.0008이 권장된다."
+    },
+    {
+      "id": "3d967835-3b77-431e-938f-daa5f4e6687a",
+      "question": "`strategy.check_sanity(splats, optimizers)`는 무엇을 검사하는가?",
+      "answer": "params와 optimizer의 키가 일치하는지 검사한다. 밀도화가 파라미터와 Adam 상태를 함께 조작하므로 사전 검증이 필요하다."
+    },
+    {
+      "id": "e3254a92-4ba5-44f1-9526-eb588925d0a4",
+      "question": "밀도화 전략의 상태는 어떻게 초기화하는가?",
+      "answer": "`strategy.initialize_state(scene_scale=scene_scale)`로 만든다. 이 state에 gradient 통계 등이 누적된다."
+    },
+    {
+      "id": "c8d71509-30d0-42b7-b33b-d126f11dedb4",
+      "question": "학습 루프에서의 SH 차수 스케줄은 무엇이며 왜 쓰는가?",
+      "answer": "`sh_degree_to_use = min(step // 1000, SH_DEGREE)`로 1000스텝마다 한 차수씩 올린다. 처음엔 DC만 학습해 색부터 안정화시키는 효과가 있다."
+    },
+    {
+      "id": "cd387e3f-5b8b-4407-9b61-23d0d4ce3a89",
+      "question": "`means`의 학습률 감쇠 스케줄은 어떻게 설정하는가?",
+      "answer": "`ExponentialLR`에 `gamma = 0.01 ** (1.0 / MAX_STEPS)`를 주어, 총 스텝에 걸쳐 초기값의 1%까지 지수 감쇠시킨다."
+    },
+    {
+      "id": "fe290cb6-ee47-49d0-af22-f323d93891a0",
+      "question": "학습 루프에서 데이터는 어떤 방식으로 샘플링하는가?",
+      "answer": "`DataLoader(trainset, batch_size=1, shuffle=True, num_workers=4, persistent_workers=True)`에서 이미지 1장씩 뽑는다. `StopIteration`이 나면 iterator를 다시 만들어 무한 순환시킨다."
+    },
+    {
+      "id": "66b5d73b-e9a7-485c-8560-13a35a2deeb7",
+      "question": "학습 루프 한 스텝의 7단계 순서는?",
+      "answer": "(1) 이미지 샘플, (2) SH 차수 스케줄, (3) forward, (4) `step_pre_backward` + loss + backward, (5) 파라미터별 Adam step/zero_grad, (6) `means` lr 감쇠, (7) `step_post_backward` 밀도화 순서다."
+    },
+    {
+      "id": "4b195943-8007-41f7-9a9b-5ae3ae7523f8",
+      "question": "학습 루프에서 optimizer step은 어떻게 처리하는가?",
+      "answer": "`for opt in optimizers.values()`로 파라미터별 Adam을 각각 `opt.step()`하고 `opt.zero_grad(set_to_none=True)`로 초기화한다."
+    },
+    {
+      "id": "dfe89c0d-30e2-4315-9a35-2a18278bfcd1",
+      "question": "`zero_grad(set_to_none=True)`를 쓰는 이유는?",
+      "answer": "gradient 텐서를 0으로 채우는 대신 `None`으로 만들어 메모리와 연산을 아낀다. PyTorch의 권장 기본 동작이다."
+    },
+    {
+      "id": "49e9dcd4-6f6a-45fb-9edb-53ebf9376a86",
+      "question": "이미지 픽셀 값은 rasterization 입력으로 어떻게 전처리되는가?",
+      "answer": "`data[\"image\"].to(DEVICE) / 255.0`으로 [0,1] 범위 float으로 정규화한다. 텐서 shape은 [1,H,W,3]이다."
+    },
+    {
+      "id": "11c9fcca-628d-41a2-a60f-27e1472a85df",
+      "question": "SSIM loss 계산 시 텐서를 permute하는 이유는?",
+      "answer": "렌더 결과는 [B,H,W,3] 형식이지만 `ssim_loss`는 채널 우선 [B,3,H,W]을 기대하므로 `permute(0, 3, 1, 2)`가 필요하다."
+    },
+    {
+      "id": "31d86099-a5aa-4954-8538-89107b706be7",
+      "question": "학습 경과를 관찰하기 위해 노트북은 어떤 기록을 남기는가?",
+      "answer": "`history` dict에 step/loss/num_gs를 매 스텝 누적하고, 지정된 스텝(`snap_steps = {0, 250, 500, 1000, MAX_STEPS-1}`)에 고정 검증 시점의 렌더 이미지를 `snapshots`에 저장한다."
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "954587a8-26d1-494c-aa18-c9d6252d3b73",
+      "question": "`rasterize_to_pixels` 단계의 알파 블렌딩 공식은?",
+      "answer": "타일별로 깊이순 앞→뒤로 $C = \\sum_i c_i\\,\\alpha_i \\prod_{j<i}(1-\\alpha_j)$를 누적한다. 여기서 $\\alpha_i = o_i \\exp(-\\tfrac12 \\Delta^\\top \\Sigma'^{-1} \\Delta)$다."
+    },
+    {
+      "id": "f7f23797-21ea-42a8-aaab-4090bc80fcf3",
+      "question": "픽셀 래스터화에서 조기 종료(early termination)는 언제 발생하는가?",
+      "answer": "누적 투과율(transmittance)이 임계값 아래로 떨어지면 남은 Gaussian을 처리하지 않고 종료한다. 뒤쪽 Gaussian이 화면에 기여하지 못하므로 계산을 아낀다."
+    },
+    {
+      "id": "ad1270cc-5be5-483f-894e-6f6d265a7888",
+      "question": "`rasterization()`이 반환하는 `info` dict의 역할은?",
+      "answer": "밀도화 전략의 입력이 된다. 특히 `info[\"means2d\"]`는 화면공간 위치 텐서로, 그 gradient가 \"이 Gaussian을 더 쪼개야 하는가\"의 신호가 된다."
+    },
+    {
+      "id": "649ab91d-c634-43c2-ad47-fdb41bdcb32c",
+      "question": "`rasterize_splats()`에서 렌더 직전 각 파라미터에 적용하는 변환은?",
+      "answer": "`scales`는 `torch.exp`, `opacities`는 `torch.sigmoid`를 적용하고, `sh0`과 `shN`은 `torch.cat(..., 1)`로 [N,16,3] SH 계수로 합친다. `means`와 `quats`는 그대로 넘긴다."
+    },
+    {
+      "id": "2d12fb20-d4ee-4a4f-8286-689539104207",
+      "question": "`rasterization()`에 넘기는 `viewmats`는 어떻게 만드는가?",
+      "answer": "`torch.linalg.inv(camtoworlds)`로 camera-to-world의 역행렬, 즉 world→cam 변환을 넘긴다."
+    },
+    {
+      "id": "0802a768-39ee-4815-a311-69b9751b8273",
+      "question": "이 노트북에서 `packed=False`로 두는 이유는?",
+      "answer": "밀도화 상태 갱신 코드와 맞추기 위해서다. `packed=True`는 가시 Gaussian만 sparse하게 유지하는 다른 표현을 쓴다."
+    },
+    {
+      "id": "8d0f75f9-0654-43ca-84e5-dbf6b5b8b1a3",
+      "question": "초기 상태를 렌더할 때 `sh_degree=0`을 쓰는 이유는?",
+      "answer": "고차 SH가 모두 0으로 초기화되어 있으므로 DC 항만 평가하면 된다. 결과는 SfM 색만 반영된 렌더 이미지가 된다."
+    },
+    {
+      "id": "2f324b32-46c0-4335-8457-adcdc010e3b3",
+      "question": "화면에 보이는 Gaussian 개수는 `info`로부터 어떻게 세는가?",
+      "answer": "`(info['radii'] > 0).all(-1).sum()`으로 계산한다. `radii=0`이 컬링을 뜻하므로 모든 성분이 양수인 것만 가시 Gaussian이다."
+    },
+    {
+      "id": "d7073445-947c-4af9-906a-881fefbe56c2",
+      "question": "3DGS의 기본 손실 함수는?",
+      "answer": "$\\mathcal{L} = (1-\\lambda)\\,\\mathcal{L}_{L1} + \\lambda\\,(1-\\mathrm{SSIM})$이고 $\\lambda = 0.2$다. 즉 0.8·L1 + 0.2·SSIM loss다."
+    },
+    {
+      "id": "6727d08a-cd90-4208-93ef-adbbda90a245",
+      "question": "손실에서 L1 항이 담당하는 역할은?",
+      "answer": "픽셀 단위 색 재구성을 담당하며 노이즈에 강건하다. 다만 L1만 쓰면 결과가 뭉개지는 경향이 있다."
+    },
+    {
+      "id": "9bc273d4-c2fa-4437-9d29-394a803e6c07",
+      "question": "손실에서 SSIM 항이 담당하는 역할은?",
+      "answer": "11×11 가우시안 윈도우 기반 구조 유사도로 국소 대비/구조를 맞춘다. L1만 쓸 때 생기는 뭉개짐을 억제한다."
+    },
+    {
+      "id": "f9675ff5-794e-438d-9273-a447304de53e",
+      "question": "`torch.lerp(l1, ssim, 0.2)`는 어떤 계산인가?",
+      "answer": "`0.8*l1 + 0.2*ssim`과 동일하다. 선형 보간으로 두 손실을 $\\lambda=0.2$ 비율로 섞는 간결한 표현이다."
+    },
+    {
+      "id": "775f18ef-1339-4e46-9f8c-f4f5a3bebfe7",
+      "question": "simple_trainer에 있는 선택적 손실 항들은 무엇인가? (기본은 모두 꺼짐)",
+      "answer": "`depth_loss`(SfM 포인트 disparity L1), `opacity_reg`/`scale_reg`(MCMC 전략용 정규화), `random_bkgd`(투명 영역이 배경색으로 도망가는 것 방지)가 있다."
+    },
+    {
+      "id": "6681621e-dd8c-426a-a92b-a11f7767e68d",
+      "question": "`random_bkgd` 옵션의 목적은?",
+      "answer": "투명 영역이 특정 배경색으로 도망가는(overfit) 것을 방지한다. 배경을 매번 랜덤하게 바꿔 학습한다."
+    },
+    {
+      "id": "90426741-8e04-47d4-9a78-e855b2bf1ecc",
+      "question": "밀도화(densification)가 3DGS 학습에 필수인 이유는?",
+      "answer": "SfM 포인트만으로는 씬을 다 덮지 못하기 때문이다. 학습 중에 Gaussian을 늘리고 정리하는 과정이 필요하다."
+    },
+    {
+      "id": "d41cd547-26e6-4e92-8bdf-4674bd3dd90f",
+      "question": "원논문 방식의 밀도화를 구현한 gsplat 클래스는?",
+      "answer": "`gsplat/strategy/default.py`의 `DefaultStrategy`다. 매 스텝 `step_pre_backward()`와 `step_post_backward()` 두 훅이 호출된다."
+    },
+    {
+      "id": "a745b150-a3d1-49f6-bbf3-68b1f5d7e79d",
+      "question": "`step_pre_backward()`가 하는 일은?",
+      "answer": "`info[\"means2d\"].retain_grad()`를 호출한다. 중간 텐서인 화면공간 위치의 gradient를 backward 후에도 읽을 수 있게 해준다."
+    },
+    {
+      "id": "eea40a86-f939-46ea-8cbd-170d60f60243",
+      "question": "`step_post_backward()`가 하는 일은?",
+      "answer": "gradient 통계를 누적하고, 정해진 주기마다 refine(duplicate/split/prune/opacity reset)을 실행한다."
+    }
+  ]
+}

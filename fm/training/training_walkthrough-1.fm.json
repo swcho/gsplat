@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "1019f48b-b951-450d-a2da-4a45a5511234",
+      "question": "gsplat 3DGS 학습 파이프라인의 핵심 경로는 어떤 단계들로 이루어지는가?",
+      "answer": "데이터 로드 → Gaussian 초기화 → 렌더(rasterization) → 손실 계산 → 밀도화 → 최적화의 순서다. viewer, pose/appearance 최적화, 분산 학습, 압축 등은 부가 기능이다."
+    },
+    {
+      "id": "3dfcab35-9789-407a-b11a-395503dc41f7",
+      "question": "training_walkthrough 노트북은 어떤 파일을 따라가며 학습 과정을 분해하는가?",
+      "answer": "`examples/simple_trainer.py`를 따라간다. 실제 트레이너의 핵심 경로만 남기고 부가 기능은 걷어낸 최소 버전이다."
+    },
+    {
+      "id": "39a6ceac-18b6-4066-beba-e35a5766fb67",
+      "question": "매 학습 스텝에서 반복되는 동작을 순서대로 나열하면?",
+      "answer": "이미지 1장 샘플 → `rasterization()` → loss = 0.8·L1 + 0.2·(1−SSIM) → `step_pre_backward()` → `loss.backward()` → `optimizer.step()` → `step_post_backward()`(duplicate/split/prune/opacity reset)다."
+    },
+    {
+      "id": "f05389f3-3915-4a5d-9488-f832f0bda84f",
+      "question": "이 워크스루를 실행하기 위한 환경 요건은?",
+      "answer": "CUDA GPU와 gsplat CUDA extension이 빌드된 환경이 필요하다(`conda activate gsplat`). 데이터는 Mip-NeRF 360 등 COLMAP 형식 씬이면 된다."
+    },
+    {
+      "id": "811a2789-a0bf-40a8-9633-5baac2772e95",
+      "question": "`# %%` 셀 형식으로 작성된 이 py 파일을 노트북으로 어떻게 다룰 수 있는가?",
+      "answer": "VSCode에서 열면 `# %%` 셀 단위 인터랙티브 실행이 되고, `jupytext --to ipynb training_walkthrough.py`로 .ipynb 변환도 가능하다."
+    },
+    {
+      "id": "44680c8d-176c-4462-b07c-8b5b276baa4b",
+      "question": "노트북 상단 설정에서 `DATA_FACTOR = 8`로 둔 이유는?",
+      "answer": "`DATA_FACTOR`는 이미지 다운샘플 배율로, simple_trainer 기본값은 4다. 빠른 데모를 위해 8로 더 크게 줄여 쓴다."
+    },
+    {
+      "id": "a4fdd84b-3769-4850-9e11-b39f8d4905c2",
+      "question": "`TEST_EVERY = 8` 설정의 의미는?",
+      "answer": "8장마다 1장을 검증(val)용으로 분리한다는 뜻이다. train/val 분리는 \"매 test_every번째 이미지는 val\"이라는 단순 규칙이다."
+    },
+    {
+      "id": "3a6ab312-6198-49d8-ae08-37d297408376",
+      "question": "`MAX_STEPS = 2_000`은 논문 재현 설정과 어떻게 다른가?",
+      "answer": "2,000스텝은 데모용이고, 원논문 재현에는 30,000스텝이 필요하다."
+    },
+    {
+      "id": "dbccc579-28a5-45e2-b5a1-c90cb3074f41",
+      "question": "`SH_DEGREE = 3`일 때 spherical harmonics 계수는 몇 개인가?",
+      "answer": "$(3+1)^2 = 16$개다. 일반적으로 최대 차수 $d$에 대해 $(d+1)^2$개의 계수를 갖는다."
+    },
+    {
+      "id": "ae774362-62d1-42bc-8f10-9a32297e2c5d",
+      "question": "재현성을 위해 노트북 시작 시 어떤 시드 설정을 하는가?",
+      "answer": "`torch.manual_seed(42)`와 `np.random.seed(42)`를 함께 설정한다."
+    },
+    {
+      "id": "c4608a0a-3bea-45ca-937d-8b8ee5218517",
+      "question": "3DGS 학습의 입력 데이터는 무엇인가?",
+      "answer": "같은 장면을 여러 각도에서 찍은 사진과 그에 대한 COLMAP SfM 결과다. `datasets/colmap.py`의 `Parser`가 이를 읽어온다."
+    },
+    {
+      "id": "9fb304f0-fbe3-4065-8716-13da1ef53ab8",
+      "question": "COLMAP `Parser`가 읽어오는 세 가지 데이터와 각각의 용도는?",
+      "answer": "카메라 포즈 `camtoworlds` [N,4,4]는 각 학습 이미지의 시점, 내부 파라미터 `Ks` [3,3](+왜곡계수)는 투영 모델, sparse 3D 포인트+RGB는 Gaussian의 초기 위치/색(`init_type=\"sfm\"`)으로 쓰인다."
+    },
+    {
+      "id": "d99ea915-7e36-43f7-afa2-a96abab23c1a",
+      "question": "카메라 내부 파라미터에 왜곡계수가 있으면 어떻게 처리하는가?",
+      "answer": "이미지를 미리 undistort해서 사용한다. 그래야 pinhole 투영 모델을 그대로 쓸 수 있다."
+    },
+    {
+      "id": "648d711a-f189-4715-91a0-2ba0b5bebc49",
+      "question": "`Parser(normalize=True)`는 무엇을 하는가?",
+      "answer": "카메라 위치 기준 similarity 변환으로 월드 좌표를 정규화한다. 내부적으로 `similarity_from_cameras`와 `align_principal_axes`를 사용한다."
+    },
+    {
+      "id": "7790a2dd-d5ef-476e-848a-f0c0eaadb685",
+      "question": "`parser.scene_scale`은 왜 중요한 값인가?",
+      "answer": "씬의 대략적 크기를 나타내며, 이후 learning rate와 밀도화 임계값의 기준 단위가 된다. 씬 크기에 무관하게 동작하도록 만들어 주는 스케일 인자다."
+    },
+    {
+      "id": "0dca575b-90e4-489e-b945-9811b78b9782",
+      "question": "노트북에서 `scene_scale`을 어떻게 계산하는가?",
+      "answer": "`scene_scale = parser.scene_scale * 1.1`로 계산한다. simple_trainer.py:458의 `scene_scale * 1.1 * global_scale`과 동일한 로직이다."
+    },
+    {
+      "id": "f2ecd102-8745-4644-aabe-daf00ba46c51",
+      "question": "SfM 포인트클라우드와 카메라 위치를 시각화할 때 카메라 위치는 어떻게 얻는가?",
+      "answer": "`parser.camtoworlds[:, :3, 3]`로 camera-to-world 행렬의 translation 성분을 뽑는다. 이것이 월드 좌표계의 카메라 위치다."
+    },
+    {
+      "id": "85650474-7478-43f5-9cc6-f94fa39c6e13",
+      "question": "하나의 3D Gaussian을 표현하는 5종류 파라미터는?",
+      "answer": "`means`(위치), `scales`(크기), `quats`(회전), `opacities`(불투명도), `sh0`/`shN`(색을 나타내는 SH 계수)다."
+    },
+    {
+      "id": "fa7e975d-bfc1-4a7b-9c7e-59644e04d88e",
+      "question": "Gaussian 파라미터를 왜 \"비제약 공간\"에 저장하는가?",
+      "answer": "최적화 안정성을 위해서다. 제약이 있는 값(양수, 0~1 범위 등)은 log/logit 공간에 저장하고 렌더 직전에 활성화 함수를 통과시킨다."
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "8f75a70a-993e-4e72-b85d-8027f098a919",
+      "question": "스냅샷 렌더를 고정된 val 시점에서 찍는 이유는?",
+      "answer": "같은 시점을 반복 렌더해야 학습 경과를 직접 비교할 수 있기 때문이다. `valset[0]`의 포즈와 K를 재사용한다."
+    },
+    {
+      "id": "87c52224-f50d-4dc7-93c5-a2fab9fde0a3",
+      "question": "손실 곡선에서 밀도화의 흔적은 어떻게 나타나는가?",
+      "answer": "Gaussian 수가 refine 구간(스텝 500~)에서 100스텝마다 계단식으로 늘어난다. 30k 스텝 완주 시에는 3000스텝마다 opacity reset 직후 loss가 튀었다 회복하는 패턴과 15000스텝 이후 개수 고정도 보인다."
+    },
+    {
+      "id": "01b62980-e0a5-44a7-ae4e-8362c2540f59",
+      "question": "손실 곡선을 그릴 때 y축을 log 스케일로 두는 이유는?",
+      "answer": "학습 초반에 손실이 급격히 떨어지므로 선형 축에서는 후반 변화가 보이지 않는다. `set_yscale(\"log\")`로 전 구간 변화를 함께 볼 수 있다."
+    },
+    {
+      "id": "7be90d34-2661-422e-b699-2c346eba5d62",
+      "question": "PSNR은 MSE로부터 어떻게 계산하는가?",
+      "answer": "`-10.0 * math.log10(mse)`로 계산한다(값 범위가 [0,1]로 정규화된 경우). 노트북의 `eval_psnr()`은 렌더를 `clamp(0,1)`한 뒤 `F.mse_loss`로 MSE를 구한다."
+    },
+    {
+      "id": "c3ed5726-0657-46cd-9a98-b7307c6c5dc4",
+      "question": "`eval_psnr()` 함수에 `@torch.no_grad()`를 붙인 이유는?",
+      "answer": "평가에는 gradient가 필요 없으므로 계산 그래프를 만들지 않아 메모리와 시간을 아낀다."
+    },
+    {
+      "id": "f471be8a-03bf-4cb1-9cb0-39438e69b244",
+      "question": "평가 시에는 `sh_degree`를 어떻게 주는가?",
+      "answer": "스케줄된 값이 아니라 최대 차수 `SH_DEGREE`를 그대로 준다. 학습이 끝난 모델의 전체 표현력을 평가하기 위해서다."
+    },
+    {
+      "id": "e14f068f-0dc2-48a1-9bf3-a2a1265b094a",
+      "question": "garden 씬 기준 참고 PSNR 수치는?",
+      "answer": "full 학습(30k step, factor 4) 기준 약 27 dB이다. 노트북의 2k step / factor 8 데모는 이보다 낮게 나온다."
+    },
+    {
+      "id": "9ba1942c-8a39-4fe6-9525-1475b970c681",
+      "question": "simple_trainer의 `eval()`은 노트북의 `eval_psnr`과 무엇이 다른가?",
+      "answer": "torchmetrics로 PSNR뿐 아니라 SSIM/LPIPS를 계산하고 색보정 지표도 포함한다. 노트북은 PSNR만 계산하는 축약판이다."
+    },
+    {
+      "id": "d4a8ca11-8ba7-4937-9ec1-0047328d3e22",
+      "question": "노트북의 각 부분은 simple_trainer.py의 어디에 대응하는가?",
+      "answer": "`Parser`/`Dataset` 로드는 `Runner.__init__`(L444), 초기화는 `create_splats_with_optimizers`(L288), 렌더는 `Runner.rasterize_splats`(L649), 학습 루프는 `Runner.train`(L795), 평가는 `Runner.eval`(L1201)에 대응한다."
+    },
+    {
+      "id": "28044ca4-cea6-4ef9-a02c-7868df2921c1",
+      "question": "노트북이 simple_trainer에서 생략한 기능들은?",
+      "answer": "ncore 백엔드와 mask/exposure 로드, 멀티 GPU 분배, sparse/visible Adam, appearance/post-processing/왜곡 카메라, pose 최적화, ckpt/ply 저장, viewer, SSIM/LPIPS 지표 등이다."
+    },
+    {
+      "id": "f2e719ea-772d-491d-ad21-ef2c930607ef",
+      "question": "실제 트레이너의 학습 루프에는 노트북에 없는 어떤 작업이 끼어드는가?",
+      "answer": "checkpoint 저장, eval, viewer 갱신, TensorBoard 로깅이 추가로 수행된다."
+    },
+    {
+      "id": "ba3153c0-2b28-49b4-9065-36bcc51f572d",
+      "question": "`packed=True` 옵션의 이점과 함께 쓰는 기능은?",
+      "answer": "가시 Gaussian만 sparse하게 유지해 대규모 씬의 메모리를 절감한다. `sparse_grad`, `SelectiveAdam`과 조합해 쓴다."
+    },
+    {
+      "id": "e71d6ae7-4112-4708-a02b-4f7536505be9",
+      "question": "`MCMCStrategy`는 `DefaultStrategy`와 어떻게 다른가?",
+      "answer": "휴리스틱 분할 대신 SGLD 방식을 쓴다. Gaussian 수의 상한을 두고 opacity 기반 확률적 재배치와 노이즈 주입을 하며, `opacity_reg`/`scale_reg`와 함께 사용한다."
+    },
+    {
+      "id": "54c860cf-373f-4987-9106-59c36fdc654a",
+      "question": "AbsGS 방식을 쓸 때 권장 설정 조합은?",
+      "answer": "`absgrad=True`와 `grow_grad2d=0.0008`을 함께 준다. 절대값 gradient는 값이 커지므로 임계값을 기본 2e-4보다 크게 잡는다."
+    },
+    {
+      "id": "16af0058-f34a-4bf3-b779-97d68483263a",
+      "question": "gsplat이 지원하는 카메라 모델/기능에는 어떤 것들이 있는가?",
+      "answer": "pinhole 외에 fisheye/ftheta, 왜곡계수, rolling shutter, 3DGUT(`with_ut`)를 지원한다."
+    },
+    {
+      "id": "329b011b-f81d-49fc-9d3d-c43eb25805ef",
+      "question": "gsplat의 분산 학습은 어떤 방식으로 동작하는가?",
+      "answer": "`rasterization(distributed=True)`를 사용해 rank별로 Gaussian을 분할 소유한다. 각 GPU가 자기 몫의 Gaussian만 관리한다."
+    },
+    {
+      "id": "4678980d-cad3-40f2-b5d6-dabd09e0a187",
+      "question": "`examples/` 아래 모듈(`datasets.colmap` 등)을 import하려면 무엇이 필요한가?",
+      "answer": "`EXAMPLES_DIR`을 `sys.path`에 넣어야 한다. 노트북은 `__file__`이 있으면 그 디렉터리, 없으면 `os.getcwd()`를 쓴다."
+    },
+    {
+      "id": "db1aab8d-be35-4fe6-9ce3-01c1fd232c55",
+      "question": "Gaussian이 \"작은데 오차가 큰\" 경우와 \"큰데 오차가 큰\" 경우의 처리가 다른 이유는?",
+      "answer": "작은 Gaussian은 그 자리에 표현이 부족한 것이므로 복제(duplicate)해 개수를 늘린다. 큰 Gaussian은 한 개가 넓은 영역을 뭉개고 있는 것이므로 쪼개고(split) 크기를 줄여 세밀하게 만든다."
+    }
+  ]
+}
