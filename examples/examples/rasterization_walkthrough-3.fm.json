@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "1b010a09-b3fd-4ab9-91f2-940a769216cf",
+      "question": "`isect_offset_encode`는 무엇을 하는가?",
+      "answer": "정렬된 키에서 타일이 바뀌는 지점을 찾아 타일별 시작 오프셋 배열을 만든다. 빈 타일은 이전 오프셋을 그대로 물려받아 길이 0이 된다."
+    },
+    {
+      "id": "d7945d98-5b0c-4ade-94b0-e9da562fda23",
+      "question": "타일별 Gaussian 개수를 오프셋 배열에서 어떻게 구하는가?",
+      "answer": "오프셋 배열 끝에 `n_isects`를 붙인 뒤 인접 차분(`flat[1:] - flat[:-1]`)을 계산한다. 마지막 타일은 n_isects까지가 범위다."
+    },
+    {
+      "id": "3906b0d6-951c-4333-a1ae-c056b47253ad",
+      "question": "AABB 모드와 AccuTile 모드의 차이는?",
+      "answer": "AABB는 radii 사각형이 겹치는 타일을 전부 고르고, AccuTile은 `conics`/`opacities`를 함께 넘겨 알파가 1/255 이상인 타원과 실제로 겹치는 타일만 고른다. 결과 이미지는 같고 정렬·블렌딩 비용만 줄어든다."
+    },
+    {
+      "id": "804fefdc-2391-439e-bee7-613ed34f3d24",
+      "question": "알파 블렌딩에서 σ(마할라노비스 관련 항)는 어떻게 계산하는가?",
+      "answer": "$\\sigma_i = \\tfrac12(a\\,dx^2 + c\\,dy^2) + b\\,dx\\,dy$로, conic 성분 (a,b,c)와 픽셀 중심까지의 차 (dx,dy)를 사용한다. 이는 마할라노비스 거리의 절반이다."
+    },
+    {
+      "id": "f528d671-4da3-4189-906d-05ab8e39df96",
+      "question": "알파 블렌딩에서 dx, dy를 계산할 때 픽셀 좌표에 왜 0.5를 더하는가?",
+      "answer": "픽셀의 중심 좌표를 쓰기 때문이다. `dx = means2d[g,0] - (px + 0.5)` 형태로 픽셀 모서리가 아닌 중심과의 거리를 잰다."
+    },
+    {
+      "id": "ab530db4-cfcf-47c4-9a7c-3f2a814e3b21",
+      "question": "알파 블렌딩의 누적 공식(앞→뒤 순회)은?",
+      "answer": "$\\alpha_i = \\min(0.99,\\ o_i e^{-\\sigma_i})$, $C_p = \\sum_i c_i\\alpha_i T_i$, $T_{i+1} = T_i(1-\\alpha_i)$이다. 최종적으로 `render_alpha = 1 - T`가 된다."
+    },
+    {
+      "id": "b9f8393e-900e-437c-a3ea-3ab4e7811226",
+      "question": "래스터화에 쓰이는 세 가지 임계 상수와 각각의 값은?",
+      "answer": "`ALPHA_THRESHOLD = 1/255`(이보다 작은 α는 건너뜀), `MAX_ALPHA = 0.99`(α 상한), `TRANSMITTANCE_THRESHOLD = 1e-4`(T가 이하가 되면 픽셀 종료)다. `gsplat/cuda/_constants.py`와 CUDA 쪽 Common.h에 같은 값으로 정의되어 있다."
+    },
+    {
+      "id": "78ed98cb-1324-4420-a6c0-1a973a2aba30",
+      "question": "투과율 T가 임계값 이하로 떨어질 때 그 Gaussian의 처리는?",
+      "answer": "해당 Gaussian은 블렌딩에서 제외하고 그 픽셀을 종료한다. 코드에서 `saturated` 마스크로 구분되어 `blend`에서 빠진다."
+    },
+    {
+      "id": "ed7e078a-e779-4a82-9cf1-285f35fb07e3",
+      "question": "`rasterize_to_pixels_3dgs_fwd_kernel`에서 CUDA 블록과 스레드는 각각 무엇에 대응하는가?",
+      "answer": "블록 하나가 타일 하나를, 스레드 하나가 타일 안의 픽셀 하나를 맡는다. 템플릿 파라미터는 `<CDIM, TILE=16, CTA=256>`이다."
+    },
+    {
+      "id": "b0cd7873-8c17-412f-885b-9cf189aa608f",
+      "question": "래스터화 커널이 shared memory를 쓰는 방식은?",
+      "answer": "타일의 Gaussian 목록을 256개씩 배치로 나눠, 각 스레드가 Gaussian 1개씩(id, xy, opacity, conic) shared memory에 적재하고 `__syncthreads()`한다. 그 뒤 모든 스레드가 shared memory의 Gaussian들을 앞→뒤로 순회한다."
+    },
+    {
+      "id": "f7a1b48a-50b8-49f6-bc14-fc3201d73b76",
+      "question": "래스터화 커널의 타일 조기 종료 조건은?",
+      "answer": "`__syncthreads_count(done) == 256`, 즉 블록 안의 모든 픽셀이 포화(T가 임계값 이하)되면 남은 Gaussian을 건너뛰고 종료한다. PyTorch 참조 구현에서는 `if bool(done.all()): break`에 해당한다."
+    },
+    {
+      "id": "1acd6f16-9f4c-4baf-8303-09a05347cc96",
+      "question": "래스터화 커널이 backward를 위해 저장하는 값은?",
+      "answer": "최종 투과율 T와 `last_ids`(픽셀별 마지막으로 기여한 Gaussian 인덱스)다. backward는 이 둘에서 출발해 역순으로 순회한다."
+    },
+    {
+      "id": "39f770b4-02ec-4962-9c46-0a9e340b3649",
+      "question": "backward 커널이 투과율 T를 어떻게 복원하는가?",
+      "answer": "forward가 저장한 최종 T에서 시작해 같은 타일 목록을 뒤→앞으로 순회하며 `T /= (1-α)`로 되돌린다. 그래서 중간 T를 모두 저장할 필요가 없다."
+    },
+    {
+      "id": "04151b9e-37b1-40a8-b6e7-06335aa02917",
+      "question": "backward에서 Gaussian별 grad를 모으는 방법은?",
+      "answer": "Gaussian 하나에 대한 기여가 여러 픽셀(스레드)에 흩어져 있으므로 warp 단위로 합친 뒤 `atomicAdd`로 모은다. 이렇게 atomic 연산 횟수를 줄인다."
+    },
+    {
+      "id": "6badbb31-8e14-4675-beb6-d1f5247e6d22",
+      "question": "`absgrad=True` 옵션은 무엇을 하는가?",
+      "answer": "∂L/∂means2d의 절댓값 합을 따로 누적한다. AbsGS 방식의 밀도화 기준으로 사용된다."
+    },
+    {
+      "id": "ec90b6c5-009d-451d-8dd2-e34748ed2c2b",
+      "question": "`rasterize_stepwise`가 `rasterization()`과 결과를 맞추기 위해 지킨 두 가지는?",
+      "answer": "투영에 `opacities`를 넘겨 불투명도 인지 반경을 쓰고, 타일 교차에 `conics`/`opacities`를 넘겨 AccuTile 모드를 쓴다. 이렇게 해야 Rendering.cpp의 `rasterization_3dgs`와 같은 순서가 된다."
+    },
+    {
+      "id": "5ddd883a-6243-425b-8b64-b9e3af95e94b",
+      "question": "`rasterize_stepwise`에서 SH 평가에 `masks`를 넘기는 이유는?",
+      "answer": "`masks = (radii > 0).all(dim=-1)`로 컬링된 Gaussian은 SH 계산을 건너뛰기 위해서다. 보이지 않는 Gaussian의 색은 계산할 필요가 없다."
+    },
+    {
+      "id": "425059e8-1824-427f-bfb8-076b32f1e3ed",
+      "question": "fused 경로와 stepwise 경로의 meta를 비교할 때 radii=0 항목을 제외하는 이유는?",
+      "answer": "컬링된 항목은 커널이 early-return해서 값을 쓰지 않으므로 `torch.empty`의 쓰레기값이 남기 때문이다. 따라서 `radii > 0`인 항목만 비교해야 한다."
+    }
+  ]
+}

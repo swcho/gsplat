@@ -1,0 +1,13 @@
+A clean flat-design educational infographic, 16:9 landscape, titled "Tile Intersection: Why Pixels Skip Most Gaussians" in bold dark text at the top center. Light off-white background (#F7F8FA), thin gray grid lines, a restrained palette of slate gray, coral red, teal, and amber. Modern geometric sans-serif labels, generous white space, no photorealism, no drop shadows.
+
+The layout is three panels reading left to right, connected by two bold amber arrows that carry the eye across the page.
+
+LEFT PANEL, header "NAIVE": a small screen rectangle filled with a dense field of tiny gray dots labeled "N Gaussians". One single pixel is drawn as a highlighted red square, with thin red lines radiating from it to EVERY dot, forming a chaotic starburst that looks visually expensive. Below in a red-tinted box, large monospace text "O(H x W x N)" and under it the short label "every pixel checks all N". A small red warning badge reads "99% wasted".
+
+MIDDLE PANEL, header "TILED": the same screen rectangle, now cleanly divided into a 4 x 3 grid of equal square tiles with crisp gray borders. One tile is annotated with a small bracket and the label "16 x 16 pixels". Three colored ellipses of different sizes and rotations (coral, teal, amber) lie over the grid; each ellipse's axis-aligned bounding box is drawn as a dashed outline, and every tile that box touches is filled with that ellipse's light tint. Tiles touched by two ellipses show a split two-tone fill, marked by a tiny callout "overlap = listed twice". A single pixel is again a highlighted red square, but now only ONE tile around it is outlined in bold red, with the label "pixel checks its tile list".
+
+RIGHT PANEL, header "PAIR LIST": a vertical table of small rounded rows, each row showing a colored chip and monospace text like "(g0, t5)", "(g0, t6)", "(g1, t6)", "(g2, t9)". A caption under the table reads "n_isects >> N". Beside it, a thin vertical flow of three stacked steps joined by short downward arrows, each a small rounded box: step 1 "64-bit key: image | tile | depth", step 2 "radix sort", step 3 "tile offsets". At the bottom of this flow, a final wide box in teal shows a 16x16 square of tiny dots labeled "1 CUDA block = 1 tile" with the sub-label "256 threads = 256 pixels".
+
+Across the very bottom of the whole infographic, a slim full-width strip in muted slate holds a simple two-ended trade-off bar: the left end labeled "small tiles: tighter culling, more pairs", the right end labeled "large tiles: fewer pairs, more waste", with a marker positioned near the center labeled "gsplat tile_size = 16".
+
+All labels must be short English phrases of five words or fewer, rendered crisply and correctly. Do not add any extra sentences or paragraphs of text.

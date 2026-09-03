@@ -1,0 +1,13 @@
+A clean flat-design educational infographic, 16:9 landscape, titled "AABB vs AccuTile" at the top center in a bold sans-serif, with a small grey subtitle underneath reading "Tile selection for one 2D Gaussian".
+
+Layout: two large square comparison panels side by side filling the upper two thirds, separated by a thin vertical divider with a small circled "vs" badge in the middle. Below them, a full-width summary bar spanning the bottom. Reading flow goes left panel to right panel, then down to the bar.
+
+Both panels show the EXACT SAME scene: a light grey 6x6 grid of square tiles with thin grey gridlines, and one long narrow ellipse tilted about 40 degrees, drawn as a smooth dark navy outline with a soft translucent blue fill, crossing the grid diagonally from lower-left to upper-right.
+
+LEFT PANEL, header label "AABB mode" in dark navy, with a smaller grey sub-label "radii rectangle". Draw an orange axis-aligned rectangle that tightly encloses the tilted ellipse. Every grid tile that the orange rectangle touches is filled with a solid muted orange highlight, forming a big blocky rectangular blob of about 20 highlighted tiles. The corner tiles of that blob are empty of the ellipse and are marked with small grey X icons. A short pointer label near a corner tile reads "wasted tiles". A small counter chip at the bottom of the panel reads "20 tiles".
+
+RIGHT PANEL, header label "AccuTile mode" in dark navy, with a smaller grey sub-label "conics + opacities". No rectangle is drawn. Only the tiles the ellipse actually passes through are filled with a solid muted green highlight, forming a thin diagonal staircase of about 9 tiles hugging the ellipse. A thin dashed navy outline traces the ellipse boundary with a small pointer label reading "alpha = 1/255 contour". A small formula chip below the panel shows "sigma <= ln(255 * o)". A small counter chip at the bottom of the panel reads "9 tiles".
+
+BOTTOM SUMMARY BAR: pale neutral background, three evenly spaced items separated by thin dividers, each with a tiny flat icon on the left. Item 1, checkmark icon, label "Same image, pixel for pixel". Item 2, downward arrow icon, label "Fewer intersections (n_isects)". Item 3, lightning bolt icon, label "Cheaper sort and blend". Under the bar, a very small grey credit line reads "SnugBox + AccuTile, Speedy-Splat".
+
+Style: modern flat vector infographic, no gradients except the soft ellipse fill, no drop shadows, generous white space, off-white background. Restricted palette: dark navy, muted orange, muted green, mid grey, off-white. All labels short, crisp, high-contrast sans-serif, correctly spelled English. No extra text, no paragraphs, no watermark.

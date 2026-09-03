@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "fafdcbe1-5aa4-4bc3-88fe-f04d69895bba",
+      "question": "gsplat `rasterization()` 파이프라인의 7단계를 순서대로 나열하면?",
+      "answer": "① 3D 공분산(Σ=RSSᵀRᵀ) ② 카메라 좌표 변환 ③ 원근 투영(EWA) ④ SH 색 평가 ⑤ 타일 교차 ⑥ 타일 오프셋 ⑦ 알파 블렌딩 순이다. ②③은 `fully_fused_projection` CUDA 커널 하나로 융합되어 처리된다."
+    },
+    {
+      "id": "6c4ac908-7bfd-4943-b13d-4b817c96ce3e",
+      "question": "`rasterization()`의 입력 텐서들과 그 모양은?",
+      "answer": "`means[N,3]`, `quats[N,4]`, `scales[N,3]`, `opacities[N]`, `colors(SH)[N,K,3]`가 Gaussian 속성이고, `viewmats[C,4,4]`와 `Ks[C,3,3]`가 카메라 파라미터다. N은 Gaussian 수, C는 카메라 수다."
+    },
+    {
+      "id": "9097c5e0-691c-4d1e-bc10-fd9d8044ec91",
+      "question": "`rasterization()`의 출력 세 가지는?",
+      "answer": "`render_colors[C,H,W,D]`, `render_alphas[C,H,W,1]`, 그리고 중간 텐서들을 담은 `meta` 딕셔너리다. `meta`에는 ①~⑥단계의 중간 결과가 들어 있다."
+    },
+    {
+      "id": "9861c74e-f833-434c-a0de-da169baf48b8",
+      "question": "현재 gsplat 코드베이스에서 `rasterization()`은 내부적으로 무엇을 호출하는가?",
+      "answer": "C++ 오케스트레이터 `rasterization_3dgs`(Rendering.cpp)에 모든 단계를 한 번에 넘긴다. 단계별 CUDA 래퍼(`_wrapper.py`)와 순수 PyTorch 참조 구현(`_torch_impl.py`)도 그대로 남아 있어 검증에 쓸 수 있다."
+    },
+    {
+      "id": "989c0ad7-997f-4842-b448-6eec32656819",
+      "question": "이 워크스루 노트북이 사용하는 테스트 데이터는?",
+      "answer": "저장소에 포함된 `assets/test_garden.npz`로, garden 씬의 COLMAP SfM 포인트 138,766개와 카메라 3대가 들어 있다. 별도 데이터 준비 없이 바로 실행할 수 있다."
+    },
+    {
+      "id": "d6ab6251-f6fd-4f63-8b58-465625b6694f",
+      "question": "`load_test_data()`가 반환하는 값 중 실제 SfM 데이터에서 온 것과 랜덤으로 채운 것은?",
+      "answer": "`means`(3D 위치)와 `rgbs`(색)는 실제 SfM 데이터다. `quats`(회전), `scales`(크기), `opacities`(불투명도)는 SfM에 없으므로 랜덤으로 채운다."
+    },
+    {
+      "id": "461a4856-0980-4248-958d-9da1e1e3127e",
+      "question": "`render_mode=\"RGB+ED\"`는 무엇을 의미하는가?",
+      "answer": "RGB 3채널에 기대 깊이(Expected Depth) 1채널을 더해 렌더링한다. 깊이는 색과 똑같이 채널 하나로 취급되어 함께 블렌딩되고, ED는 마지막에 alpha로 나눈다."
+    },
+    {
+      "id": "e65d4e4a-7712-4f1f-8557-b3ec7d39f93a",
+      "question": "SH 계수를 SfM 색으로 초기화할 때 DC 성분을 어떻게 계산하는가?",
+      "answer": "`sh_coeffs[:, 0] = (rgbs - 0.5) / C0`로 계산하며, 여기서 `C0 = 0.28209479177387814`는 SH 0차 기저 상수 $Y_{00}$이다. 렌더링 시 `+0.5`로 되돌린다."
+    },
+    {
+      "id": "e7f1aff8-6d77-4d3e-a2d0-36cefc8f0437",
+      "question": "`sh_degree=3`일 때 SH 계수 개수 K는 몇 개인가?",
+      "answer": "$K = (\\text{sh\\_degree}+1)^2 = 16$개다. 따라서 색 텐서의 모양은 `[N,16,3]`이 된다."
+    },
+    {
+      "id": "ebf36320-8ad8-48a5-a78c-a109168d7cfd",
+      "question": "`meta[\"radii\"]`의 모양과 의미는?",
+      "answer": "`[C,N,2]` 정수 텐서로 화면에서의 x/y 반경(px)이다. 값이 0이면 컬링된 것으로, 절두체 밖이거나 너무 작거나 너무 투명한 경우다."
+    },
+    {
+      "id": "359b83cb-dd08-4386-8aa5-f33e30376b8e",
+      "question": "`meta[\"means2d\"]`가 학습에서 특별히 중요한 이유는?",
+      "answer": "투영된 화면 좌표(px)인데, 이 텐서의 grad 크기가 밀도화(densification) 시 split/duplicate 판정 기준이 되기 때문이다. DefaultStrategy가 이 값을 사용한다."
+    },
+    {
+      "id": "4ccae936-d1ce-460b-b7e2-ed94808f6eac",
+      "question": "`meta[\"conics\"]`는 무엇인가?",
+      "answer": "2D 공분산의 역행렬 $\\Sigma_2^{-1}$의 상삼각 성분 (a, b, c)를 담은 `[C,N,3]` 텐서다. 래스터화에서 실제로 쓰이는 것은 $\\Sigma_2$가 아니라 이 conic이다."
+    },
+    {
+      "id": "6c1499da-7543-494c-8f20-ac5e4b9e3de3",
+      "question": "`meta`의 `isect_ids`와 `flatten_ids`는 각각 무엇인가?",
+      "answer": "`isect_ids`는 정렬된 64bit 키(이미지·타일·깊이)이고, `flatten_ids`는 그에 대응하는 Gaussian 인덱스다. 둘 다 길이가 `[n_isects]`다."
+    },
+    {
+      "id": "0e8c4519-d7a4-4105-b80c-5652c1c9e156",
+      "question": "`meta[\"isect_offsets\"]`의 모양과 역할은?",
+      "answer": "`[C, tile_h, tile_w]` 모양으로, 각 타일이 `flatten_ids`에서 시작하는 위치를 담는다. 타일 t의 Gaussian 목록은 `flatten_ids[offsets[t]:offsets[t+1]]`이다."
+    },
+    {
+      "id": "c5635579-3947-4667-aab5-52c1da6558ed",
+      "question": "노트북의 장난감(toy) 씬 구성은?",
+      "answer": "Gaussian 4개, 64×48 이미지, `viewmat = I`(원점에서 +z 방향)이고 타일 크기 16px로 4×3 타일이 된다. 네 번째 Gaussian은 z=-2, 즉 카메라 뒤에 두어 컬링을 확인한다."
+    },
+    {
+      "id": "676df538-fd1f-48e6-b1fa-bbb838d16673",
+      "question": "gsplat의 쿼터니언 규약은 무엇인가?",
+      "answer": "w-first 규약, 즉 (w, x, y, z) 순서다. 예를 들어 z축 회전은 `[cos(θ/2), 0, 0, sin(θ/2)]`가 된다."
+    },
+    {
+      "id": "6564d6df-3d78-41ee-b8f9-280bee2db6a8",
+      "question": "3D 공분산 Σ를 직접 최적화하지 않고 quats와 scales로 표현하는 이유는?",
+      "answer": "Σ를 직접 최적화하면 양정치성(positive definiteness)이 깨질 수 있기 때문이다. $\\Sigma = (R\\,\\text{diag}(s))(R\\,\\text{diag}(s))^\\top$ 형태로 만들면 항상 유효한 공분산이 보장된다."
+    },
+    {
+      "id": "94dd7d4f-96a7-4c6c-9547-e2dc479b63eb",
+      "question": "`covar_from_quat_scale` 함수가 Σ를 계산하는 방식은?",
+      "answer": "쿼터니언을 회전행렬 R로 바꾸고 `M = R * s[..., None, :]`로 $R\\,\\text{diag}(s)$를 만든 뒤 `M @ M.T`를 반환한다. 이것이 $RSS^\\top R^\\top$과 같다."
+    }
+  ]
+}
